@@ -25,8 +25,7 @@ export default defineNuxtConfig({
 
   // Nitro server config
   nitro: {
-    // Vercel will auto-detect, but explicit is better
-    preset: process.env.NITRO_PRESET || 'node-server',
+    // Let Nitro auto-detect the deployment environment (e.g. Vercel)
   },
 
   // App head config
