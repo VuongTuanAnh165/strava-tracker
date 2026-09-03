@@ -25,6 +25,3 @@ logs
 
 # Firebase service account keys (NEVER commit)
 server/config/
-
-# Internal docs
-.cd/
