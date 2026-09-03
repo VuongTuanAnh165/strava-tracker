@@ -20,8 +20,17 @@ function getFirebaseApp(): App {
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
+
+  if (privateKey) {
+    // Remove surrounding quotes if Vercel included them
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1)
+    }
+    // Convert literal \n to actual newlines
+    privateKey = privateKey.replace(/\\n/g, '\n')
+  }
 
   if (!projectId || !privateKey || !clientEmail) {
     throw new Error(
