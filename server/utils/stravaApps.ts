@@ -14,7 +14,7 @@ export interface StravaAppConfig {
   webhookToken: string
 }
 
-const MAX_USERS_PER_APP = 10
+const MAX_USERS_PER_APP = 9
 
 /**
  * Parse and return all Strava app configs from environment.
@@ -84,9 +84,9 @@ export async function findAvailableApp(): Promise<StravaAppConfig | null> {
   // Fetch all users to count them in memory
   // This is very fast since we only have max 50 users, and perfectly handles legacy users
   const usersSnapshot = await db.collection('users').get()
-  
+
   const userCounts: Record<number, number> = {}
-  
+
   usersSnapshot.forEach(doc => {
     const data = doc.data()
     // Legacy users without strava_app_index are assumed to be on App 1
