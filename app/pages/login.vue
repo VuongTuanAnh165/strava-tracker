@@ -75,12 +75,7 @@
             </template>
           </button>
           <p class="login-connect__hint" v-if="!returningUser">⬆️ Vui lòng chọn tên của bạn</p>
-          <div v-else>
-            <p class="login-connect__hint">Đăng nhập trực tiếp (Bỏ qua Strava)</p>
-            <button class="btn btn--ghost btn--sm mt-4" style="font-size: 0.8rem; color: var(--color-warning);" @click="handleReauthorize">
-              ⚠️ Sửa lỗi chạy xong không có kết quả (Ủy quyền lại)
-            </button>
-          </div>
+          <p class="login-connect__hint" v-else>Đăng nhập trực tiếp (Bỏ qua Strava)</p>
         </div>
 
         <!-- Error message -->
@@ -187,21 +182,12 @@ function redirectToStrava(clientId: string, teamId: string, appIndex: number) {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    approval_prompt: 'force', // Force them to review permissions again
+    approval_prompt: 'auto',
     scope: 'activity:read_all',
     state: `${teamId}:${appIndex}`,
   })
 
   window.location.href = `https://www.strava.com/oauth/authorize?${params.toString()}`
-}
-
-function handleReauthorize() {
-  const user = returningUser.value
-  if (!user || !user.clientId) {
-    errorMessage.value = 'Lỗi: Không tìm thấy Client ID của tài khoản này.'
-    return
-  }
-  redirectToStrava(user.clientId, user.teamId, user.appIndex)
 }
 
 function handleConnectError(err: any) {

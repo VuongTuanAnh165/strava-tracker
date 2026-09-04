@@ -30,7 +30,7 @@ export default defineNuxtConfig({
     // Cache on CDN for 2 minutes (SWR). Max 1 Firebase read every 2 mins globally!
     '/api/leaderboard': { swr: 120 },
     // Cache on CDN for 30 minutes (SWR). 
-    '/api/auth/public-users': { swr: false },
+    '/api/auth/public-users': { swr: 1800 },
   },
 
   // App head config
