@@ -18,61 +18,22 @@
       </div>
     </div>
 
-    <!-- Mode Selection Tabs -->
-    <div class="container">
-      <div class="login-tabs animate-fade-in-up delay-1">
-        <button 
-          class="login-tab" 
-          :class="{ 'login-tab--active': loginMode === 'new' }"
-          @click="loginMode = 'new'"
-        >
-          👋 Thành viên mới
-        </button>
-        <button 
-          class="login-tab" 
-          :class="{ 'login-tab--active': loginMode === 'returning' }"
-          @click="loginMode = 'returning'"
-        >
-          🔄 Đã có tài khoản
-        </button>
-      </div>
-    </div>
+
 
     <!-- Main Login Section -->
     <div class="container">
       <div class="login-section animate-fade-in-up delay-2">
         <h2 class="login-section__title">
-          {{ loginMode === 'new' ? 'Tham gia cuộc đua mới' : 'Đăng nhập lại' }}
+          Đăng nhập hệ thống
         </h2>
         <p class="login-section__desc">
-          {{ loginMode === 'new' ? 'Chọn đội rồi kết nối Strava để bắt đầu.' : 'Tìm tên của bạn để đăng nhập lại vào hệ thống.' }}
+          Tìm tên của bạn để đăng nhập vào hệ thống.
         </p>
 
-        <!-- New User Flow: Select Team -->
-        <div v-if="loginMode === 'new'" class="team-selector">
-          <button
-            class="team-option glass-card"
-            :class="{ 'team-option--selected': selectedTeam === 'team_a', 'team-card--a': true }"
-            @click="selectedTeam = 'team_a'"
-          >
-            <div class="team-option__icon" style="background: var(--color-team-a)">1</div>
-            <h3 class="team-option__name">ACP1</h3>
-            <div class="team-option__check" v-if="selectedTeam === 'team_a'">✓</div>
-          </button>
 
-          <button
-            class="team-option glass-card"
-            :class="{ 'team-option--selected': selectedTeam === 'team_b', 'team-card--b': true }"
-            @click="selectedTeam = 'team_b'"
-          >
-            <div class="team-option__icon" style="background: var(--color-team-b)">2</div>
-            <h3 class="team-option__name">ACP2</h3>
-            <div class="team-option__check" v-if="selectedTeam === 'team_b'">✓</div>
-          </button>
-        </div>
 
         <!-- Returning User Flow: Select Team & Name -->
-        <div v-else class="returning-selector">
+        <div class="returning-selector">
           <div class="select-group">
             <label>1. Đội của bạn</label>
             <select v-model="returningTeam" class="glass-select">
@@ -94,29 +55,10 @@
           </div>
         </div>
 
-        <!-- Strava Connect Button (New User) -->
-        <div v-if="loginMode === 'new'" class="login-connect animate-fade-in-up delay-3">
-          <button
-            class="btn btn--strava btn--lg"
-            :disabled="!selectedTeam || isConnecting"
-            @click="connectStravaNew"
-          >
-            <template v-if="isConnecting">
-              <span class="btn-spinner"></span> Đang kết nối...
-            </template>
-            <template v-else>
-              <svg class="strava-logo" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-              </svg>
-              Kết nối với Strava
-            </template>
-          </button>
-          <p class="login-connect__hint" v-if="!selectedTeam">⬆️ Vui lòng chọn đội trước</p>
-          <p class="login-connect__hint" v-else>Hệ thống sẽ tìm Slot trống cho bạn</p>
-        </div>
+
 
         <!-- Strava Connect Button (Returning User) -->
-        <div v-if="loginMode === 'returning'" class="login-connect animate-fade-in-up delay-3">
+        <div class="login-connect animate-fade-in-up delay-3">
           <button
             class="btn btn--strava btn--lg"
             :disabled="!returningUser || isConnecting"
@@ -188,8 +130,6 @@
 const route = useRoute()
 const config = useRuntimeConfig()
 
-const loginMode = ref<'new' | 'returning'>('new')
-const selectedTeam = ref<'team_a' | 'team_b' | null>(null)
 const returningTeam = ref<'team_a' | 'team_b' | ''>('')
 const returningUser = ref<any>(null)
 const errorMessage = ref('')
@@ -210,19 +150,7 @@ onMounted(() => {
   }
 })
 
-async function connectStravaNew() {
-  if (!selectedTeam.value) return
-  isConnecting.value = true
-  errorMessage.value = ''
 
-  try {
-    // Fetch available app (first app with < 10 users)
-    const data = await $fetch<{ appIndex: number; clientId: string }>('/api/auth/available-app')
-    redirectToStrava(data.clientId, selectedTeam.value, data.appIndex)
-  } catch (err: any) {
-    handleConnectError(err)
-  }
-}
 
 async function connectStravaReturning() {
   if (!returningUser.value) return
@@ -354,37 +282,24 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-/* Tabs */
-.login-tabs {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
+
+
+/* Login Section */
+.login-section {
+  max-width: 600px;
+  margin: var(--space-3xl) auto;
+  text-align: center;
 }
 
-.login-tab {
-  background: var(--color-bg-glass);
-  border: 1px solid var(--color-border-glass);
-  padding: var(--space-md) var(--space-xl);
-  border-radius: var(--radius-full);
-  font-family: var(--font-family);
-  font-size: var(--font-size-md);
-  color: var(--color-text-muted);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-base);
+.login-section__title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
 }
 
-.login-tab:hover {
-  background: rgba(255, 255, 255, 0.1);
+.login-section__desc {
   color: var(--color-text-secondary);
-}
-
-.login-tab--active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-xl);
 }
 
 /* Selectors */
@@ -431,91 +346,7 @@ onMounted(async () => {
   color: white;
 }
 
-/* Team Selection */
-.login-section {
-  max-width: 600px;
-  margin: var(--space-3xl) auto;
-  text-align: center;
-}
 
-.login-section__title {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  margin-bottom: var(--space-sm);
-}
-
-.login-section__desc {
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-xl);
-}
-
-.team-selector {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-lg);
-  margin-bottom: var(--space-xl);
-}
-
-.team-option {
-  padding: var(--space-xl);
-  cursor: pointer;
-  text-align: center;
-  position: relative;
-  transition: all var(--transition-base);
-  border: 2px solid transparent;
-  background: none;
-  color: var(--color-text-primary);
-  font-family: var(--font-family);
-}
-
-.team-option--selected {
-  transform: translateY(-4px) !important;
-}
-
-.team-option--selected.team-card--a {
-  border-color: var(--color-team-a);
-  box-shadow: var(--shadow-glow-a);
-}
-
-.team-option--selected.team-card--b {
-  border-color: var(--color-team-b);
-  box-shadow: var(--shadow-glow-b);
-}
-
-.team-option__icon {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-2xl);
-  font-weight: 900;
-  color: white;
-  margin: 0 auto var(--space-md);
-}
-
-.team-option__name {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-}
-
-.team-option__check {
-  position: absolute;
-  top: var(--space-sm);
-  right: var(--space-sm);
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  background: var(--color-success);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  animation: scaleIn 0.3s ease-out;
-}
 
 /* Connect Button */
 .login-connect {
@@ -665,8 +496,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 480px) {
-  .team-selector {
-    grid-template-columns: 1fr;
-  }
+  /* removed team-selector */
 }
 </style>
