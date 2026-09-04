@@ -37,10 +37,18 @@ export default defineCachedEventHandler(async () => {
     }
   })
 
-
+  // Dynamically calculate actual member count and total_km from the users array
+  // This prevents mismatches if admin manually deletes users from Firebase
+  const calculatedTeams = teams.map(team => {
+    const teamUsers = users.filter(u => u.team_id === team.id)
+    return {
+      ...team,
+      member_count: teamUsers.length,
+    }
+  })
 
   return {
-    teams,
+    teams: calculatedTeams,
     users,
   }
 }, {

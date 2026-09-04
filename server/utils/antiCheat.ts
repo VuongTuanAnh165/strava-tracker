@@ -3,8 +3,20 @@
  * 
  * Validates Strava activities against race rules.
  * All activities must pass ALL rules to be counted.
+ * 
+ * 10-Layer Validation:
+ *  1. Activity type check (type + sport_type)
+ *  2. Manual entry block
+ *  3. Treadmill/Indoor block (trainer)
+ *  4. Strava flagged activity block
+ *  5. Race date range check
+ *  6. Minimum distance (1km)
+ *  7. Max speed check
+ *  8. Auto-pause exploit check (rest ratio)
+ *  9. Average pace too fast check
+ * 10. Average pace too slow check
  */
-import { RACE_START, RACE_END, MIN_PACE, MAX_PACE, VALID_ACTIVITY_TYPES } from './constants'
+import { RACE_START, RACE_END, MIN_PACE, MAX_PACE, MAX_SPEED_MS, MAX_PAUSE_RATIO, MIN_DISTANCE, VALID_ACTIVITY_TYPES, VALID_SPORT_TYPES } from './constants'
 import { useFirebaseAdmin } from './firebase'
 import type { StravaActivity } from './strava'
 
@@ -21,11 +33,14 @@ interface ValidationResult {
  * Returns { valid: false, reason: "..." } if it fails.
  */
 export function validateActivity(activity: StravaActivity): ValidationResult {
-  // Rule 1: Activity type must be Run or VirtualRun
-  if (!VALID_ACTIVITY_TYPES.includes(activity.type)) {
+  // Rule 1: Activity type must be Run/VirtualRun (check both type AND sport_type)
+  // Strava deprecated 'type' in favor of 'sport_type', so we check both for safety
+  const typeValid = VALID_ACTIVITY_TYPES.includes(activity.type)
+  const sportTypeValid = activity.sport_type ? VALID_SPORT_TYPES.includes(activity.sport_type) : true
+  if (!typeValid && !sportTypeValid) {
     return {
       valid: false,
-      reason: `Invalid activity type: "${activity.type}". Only ${VALID_ACTIVITY_TYPES.join(', ')} are accepted.`,
+      reason: `Sai loại hình: type="${activity.type}", sport_type="${activity.sport_type}". Chỉ chấp nhận chạy bộ (Run, VirtualRun, TrailRun).`,
     }
   }
 
@@ -33,28 +48,64 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
   if (activity.manual) {
     return {
       valid: false,
-      reason: 'Manual activity entries are not accepted.',
+      reason: 'Không chấp nhận bài chạy nhập tay (Manual entry).',
     }
   }
 
-  // Rule 3: Must be within race date range (01/09 00:00 — 24/09 23:59 UTC+7)
+  // Rule 3: Must not be from a treadmill/indoor trainer (no GPS verification possible)
+  if (activity.trainer) {
+    return {
+      valid: false,
+      reason: 'Không chấp nhận chạy trên máy (Treadmill/Indoor). Yêu cầu chạy ngoài trời có GPS.',
+    }
+  }
+
+  // Rule 4: Must not be flagged by Strava's own anti-cheat AI
+  if (activity.flagged) {
+    return {
+      valid: false,
+      reason: 'Bài chạy đã bị Strava gắn cờ nghi ngờ gian lận (Flagged by Strava).',
+    }
+  }
+
+  // Rule 5: Must be within race date range
   const activityDate = new Date(activity.start_date_local)
   if (activityDate < RACE_START || activityDate > RACE_END) {
     return {
       valid: false,
-      reason: `Activity date ${activity.start_date_local} is outside race period (${RACE_START.toISOString()} — ${RACE_END.toISOString()}).`,
+      reason: `Nằm ngoài thời gian giải: ${activity.start_date_local}.`,
     }
   }
 
-  // Rule 4: Distance must be > 0
-  if (!activity.distance || activity.distance <= 0) {
+  // Rule 6: Minimum distance (1km) — prevents micro-run spam
+  if (!activity.distance || activity.distance < MIN_DISTANCE) {
+    const actualKm = activity.distance ? (activity.distance / 1000).toFixed(2) : '0'
     return {
       valid: false,
-      reason: 'Activity has no distance recorded.',
+      reason: `Quãng đường quá ngắn: ${actualKm} km (Tối thiểu: ${MIN_DISTANCE / 1000} km).`,
     }
   }
 
-  // Rule 5: Pace must be between 4:00/km and 15:00/km
+  // Rule 7: Max Speed Check — detects motorized transport
+  if (activity.max_speed && activity.max_speed > MAX_SPEED_MS) {
+    return {
+      valid: false,
+      reason: `Vận tốc tối đa quá cao: ${(activity.max_speed * 3.6).toFixed(1)} km/h (Giới hạn: ${(MAX_SPEED_MS * 3.6).toFixed(1)} km/h). Nghi ngờ dùng phương tiện.`,
+    }
+  }
+
+  // Rule 8: Auto-Pause Exploit Check (Rest Ratio)
+  if (activity.moving_time > 0) {
+    const pauseRatio = activity.elapsed_time / activity.moving_time
+    if (pauseRatio > MAX_PAUSE_RATIO) {
+      return {
+        valid: false,
+        reason: `Thời gian nghỉ ngắt quãng quá dài (Tỷ lệ: ${pauseRatio.toFixed(1)}x). Vượt quá mức cho phép ${MAX_PAUSE_RATIO}x.`,
+      }
+    }
+  }
+
+  // Rule 9 & 10: Average Pace Check (using moving_time)
   const distanceKm = activity.distance / 1000
   const paceSecondsPerKm = activity.moving_time / distanceKm
 
@@ -63,7 +114,7 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
     const paceSec = Math.floor(paceSecondsPerKm % 60)
     return {
       valid: false,
-      reason: `Pace too fast: ${paceMin}:${String(paceSec).padStart(2, '0')}/km (minimum ${MIN_PACE / 60}:00/km).`,
+      reason: `Pace trung bình quá nhanh: ${paceMin}:${String(paceSec).padStart(2, '0')}/km (Giới hạn: ${MIN_PACE / 60}:00/km).`,
     }
   }
 
@@ -72,11 +123,11 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
     const paceSec = Math.floor(paceSecondsPerKm % 60)
     return {
       valid: false,
-      reason: `Pace too slow: ${paceMin}:${String(paceSec).padStart(2, '0')}/km (maximum ${MAX_PACE / 60}:00/km).`,
+      reason: `Pace trung bình quá chậm: ${paceMin}:${String(paceSec).padStart(2, '0')}/km (Giới hạn: ${MAX_PACE / 60}:00/km).`,
     }
   }
 
-  // All rules passed
+  // All 10 rules passed ✅
   return {
     valid: true,
     distanceKm: Math.round(distanceKm * 100) / 100, // Round to 2 decimal places

@@ -12,8 +12,15 @@ export const RACE_END = new Date('2026-09-24T23:59:59+07:00')
 export const MIN_PACE = 240
 export const MAX_PACE = 900
 
-// Valid activity types
+// Anti-Cheat constraints
+export const MAX_SPEED_MS = 1000 / MIN_PACE // Equivalent to 4:00/km (4.16 m/s or 15 km/h)
+export const MAX_PAUSE_RATIO = 1.5 // Elapsed time cannot be more than 1.5x moving time
+export const MIN_DISTANCE = 1000 // Minimum 1km per activity (in meters)
+
+// Valid activity types (deprecated 'type' field — kept for backward compatibility)
 export const VALID_ACTIVITY_TYPES = ['Run', 'VirtualRun']
+// Valid sport types (new 'sport_type' field — recommended by Strava API)
+export const VALID_SPORT_TYPES = ['Run', 'VirtualRun', 'TrailRun']
 
 // Team configuration
 export const TEAMS = {

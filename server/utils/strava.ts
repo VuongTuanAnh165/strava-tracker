@@ -32,7 +32,8 @@ interface StravaActivity {
   start_date: string      // UTC
   start_date_local: string // local timezone
   manual: boolean
-  trainer: boolean
+  trainer: boolean        // true = treadmill/indoor (no GPS)
+  flagged: boolean        // true = Strava AI flagged as suspicious
   average_speed: number   // m/s
   max_speed: number       // m/s
 }
