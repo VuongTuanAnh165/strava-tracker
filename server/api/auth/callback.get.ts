@@ -74,7 +74,8 @@ export default defineEventHandler(async (event) => {
     const existingUser = await userRef.get()
 
     if (existingUser.exists) {
-      // User already exists — update tokens but keep team_id and strava_app_index (prevent switching)
+      // User already exists — update tokens and strava_app_index (in case they authorized a different app)
+      // We keep their team_id to prevent team switching.
       const existingData = existingUser.data()!
       await userRef.update({
         name: athleteName,
@@ -82,8 +83,9 @@ export default defineEventHandler(async (event) => {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
         token_expires_at: tokenData.expires_at,
+        strava_app_index: appIndex,
       })
-      console.log(`[Auth] Updated existing user: ${athleteName} (${stravaId}), team: ${existingData.team_id}, app: App${existingData.strava_app_index}`)
+      console.log(`[Auth] Updated existing user: ${athleteName} (${stravaId}), team: ${existingData.team_id}, app: App${appIndex}`)
     } else {
       // New user — create with selected team and app index
       const { FieldValue } = await import('firebase-admin/firestore')

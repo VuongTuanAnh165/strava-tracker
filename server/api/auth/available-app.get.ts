@@ -6,11 +6,26 @@
  * Returns the first Strava app that has available slots (< 10 users).
  * Called by the login page before redirecting to Strava OAuth.
  */
-import { defineEventHandler, createError } from 'h3'
-import { findAvailableApp } from '../../utils/stravaApps'
+import { defineEventHandler, getQuery, createError } from 'h3'
+import { findAvailableApp, getAppByIndex } from '../../utils/stravaApps'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   try {
+    const query = getQuery(event)
+    
+    // If a specific appIndex is requested (for returning users)
+    if (query.appIndex) {
+      const appIndex = parseInt(query.appIndex as string, 10)
+      if (!isNaN(appIndex)) {
+        const app = getAppByIndex(appIndex)
+        return {
+          appIndex: app.index,
+          clientId: app.clientId,
+        }
+      }
+    }
+
+    // Otherwise, find the first available app (for new users)
     const app = await findAvailableApp()
 
     if (!app) {

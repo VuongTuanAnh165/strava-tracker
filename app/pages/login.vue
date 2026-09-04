@@ -18,13 +18,38 @@
       </div>
     </div>
 
-    <!-- Team Selection -->
+    <!-- Mode Selection Tabs -->
+    <div class="container">
+      <div class="login-tabs animate-fade-in-up delay-1">
+        <button 
+          class="login-tab" 
+          :class="{ 'login-tab--active': loginMode === 'new' }"
+          @click="loginMode = 'new'"
+        >
+          👋 Thành viên mới
+        </button>
+        <button 
+          class="login-tab" 
+          :class="{ 'login-tab--active': loginMode === 'returning' }"
+          @click="loginMode = 'returning'"
+        >
+          🔄 Đã có tài khoản
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Login Section -->
     <div class="container">
       <div class="login-section animate-fade-in-up delay-2">
-        <h2 class="login-section__title">Chọn đội của bạn</h2>
-        <p class="login-section__desc">Chọn đội rồi kết nối Strava để tham gia cuộc đua</p>
+        <h2 class="login-section__title">
+          {{ loginMode === 'new' ? 'Tham gia cuộc đua mới' : 'Đăng nhập lại' }}
+        </h2>
+        <p class="login-section__desc">
+          {{ loginMode === 'new' ? 'Chọn đội rồi kết nối Strava để bắt đầu.' : 'Tìm tên của bạn để đăng nhập lại vào hệ thống.' }}
+        </p>
 
-        <div class="team-selector">
+        <!-- New User Flow: Select Team -->
+        <div v-if="loginMode === 'new'" class="team-selector">
           <button
             class="team-option glass-card"
             :class="{ 'team-option--selected': selectedTeam === 'team_a', 'team-card--a': true }"
@@ -46,16 +71,38 @@
           </button>
         </div>
 
-        <!-- Strava Connect Button -->
-        <div class="login-connect animate-fade-in-up delay-3">
+        <!-- Returning User Flow: Select Team & Name -->
+        <div v-else class="returning-selector">
+          <div class="select-group">
+            <label>1. Đội của bạn</label>
+            <select v-model="returningTeam" class="glass-select">
+              <option value="" disabled>-- Chọn đội --</option>
+              <option value="team_a">ACP1</option>
+              <option value="team_b">ACP2</option>
+            </select>
+          </div>
+
+          <div class="select-group" v-if="returningTeam">
+            <label>2. Tên của bạn</label>
+            <select v-model="returningUser" class="glass-select">
+              <option :value="null" disabled>-- Chọn tên của bạn --</option>
+              <option v-for="u in filteredUsers" :key="u.stravaId" :value="u">
+                {{ u.name }}
+              </option>
+              <option v-if="filteredUsers.length === 0" disabled>Chưa có ai đăng ký đội này</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Strava Connect Button (New User) -->
+        <div v-if="loginMode === 'new'" class="login-connect animate-fade-in-up delay-3">
           <button
             class="btn btn--strava btn--lg"
             :disabled="!selectedTeam || isConnecting"
-            @click="connectStrava"
+            @click="connectStravaNew"
           >
             <template v-if="isConnecting">
-              <span class="btn-spinner"></span>
-              Đang kết nối...
+              <span class="btn-spinner"></span> Đang kết nối...
             </template>
             <template v-else>
               <svg class="strava-logo" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
@@ -64,12 +111,29 @@
               Kết nối với Strava
             </template>
           </button>
-          <p class="login-connect__hint" v-if="!selectedTeam">
-            ⬆️ Vui lòng chọn đội trước
-          </p>
-          <p class="login-connect__hint" v-else>
-            Bạn sẽ được chuyển sang Strava để ủy quyền đọc dữ liệu chạy bộ
-          </p>
+          <p class="login-connect__hint" v-if="!selectedTeam">⬆️ Vui lòng chọn đội trước</p>
+          <p class="login-connect__hint" v-else>Hệ thống sẽ tìm Slot trống cho bạn</p>
+        </div>
+
+        <!-- Strava Connect Button (Returning User) -->
+        <div v-if="loginMode === 'returning'" class="login-connect animate-fade-in-up delay-3">
+          <button
+            class="btn btn--strava btn--lg"
+            :disabled="!returningUser || isConnecting"
+            @click="connectStravaReturning"
+          >
+            <template v-if="isConnecting">
+              <span class="btn-spinner"></span> Đang kết nối...
+            </template>
+            <template v-else>
+              <svg class="strava-logo" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+              </svg>
+              Tiếp tục với Strava
+            </template>
+          </button>
+          <p class="login-connect__hint" v-if="!returningUser">⬆️ Vui lòng chọn tên của bạn</p>
+          <p class="login-connect__hint" v-else>Đăng nhập lại bằng đúng App bạn đã dùng</p>
         </div>
 
         <!-- Error message -->
@@ -124,9 +188,20 @@
 const route = useRoute()
 const config = useRuntimeConfig()
 
+const loginMode = ref<'new' | 'returning'>('new')
 const selectedTeam = ref<'team_a' | 'team_b' | null>(null)
+const returningTeam = ref<'team_a' | 'team_b' | ''>('')
+const returningUser = ref<any>(null)
 const errorMessage = ref('')
 const isConnecting = ref(false)
+
+// Fetch public users for returning users list
+const { data: publicUsers } = useFetch<any[]>('/api/auth/public-users')
+
+const filteredUsers = computed(() => {
+  if (!publicUsers.value || !returningTeam.value) return []
+  return publicUsers.value.filter(u => u.teamId === returningTeam.value)
+})
 
 // Check for error from OAuth redirect
 onMounted(() => {
@@ -135,36 +210,58 @@ onMounted(() => {
   }
 })
 
-async function connectStrava() {
+async function connectStravaNew() {
   if (!selectedTeam.value) return
-
   isConnecting.value = true
   errorMessage.value = ''
 
   try {
-    // Fetch available app from server (finds first app with < 10 users)
+    // Fetch available app (first app with < 10 users)
     const data = await $fetch<{ appIndex: number; clientId: string }>('/api/auth/available-app')
-
-    const appUrl = config.public.appUrl
-    const redirectUri = `${appUrl}/api/auth/callback`
-
-    const params = new URLSearchParams({
-      client_id: data.clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      approval_prompt: 'auto',
-      scope: 'activity:read_all',
-      state: `${selectedTeam.value}:${data.appIndex}`,
-    })
-
-    window.location.href = `https://www.strava.com/oauth/authorize?${params.toString()}`
+    redirectToStrava(data.clientId, selectedTeam.value, data.appIndex)
   } catch (err: any) {
-    isConnecting.value = false
-    if (err?.statusCode === 503) {
-      errorMessage.value = 'Tất cả các slot đã đầy (50/50 VĐV). Vui lòng liên hệ admin để được hỗ trợ.'
-    } else {
-      errorMessage.value = `Không thể kết nối: ${err?.data?.message || err?.message || 'Lỗi không xác định'}`
-    }
+    handleConnectError(err)
+  }
+}
+
+async function connectStravaReturning() {
+  if (!returningUser.value) return
+  isConnecting.value = true
+  errorMessage.value = ''
+
+  try {
+    // Fetch specific app config for this returning user
+    const user = returningUser.value
+    const data = await $fetch<{ appIndex: number; clientId: string }>(`/api/auth/available-app?appIndex=${user.appIndex}`)
+    redirectToStrava(data.clientId, user.teamId, user.appIndex)
+  } catch (err: any) {
+    handleConnectError(err)
+  }
+}
+
+function redirectToStrava(clientId: string, teamId: string, appIndex: number) {
+  const appUrl = config.public.appUrl
+  const redirectUri = `${appUrl}/api/auth/callback`
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    approval_prompt: 'auto',
+    scope: 'activity:read_all',
+    state: `${teamId}:${appIndex}`,
+  })
+
+  window.location.href = `https://www.strava.com/oauth/authorize?${params.toString()}`
+}
+
+function handleConnectError(err: any) {
+  isConnecting.value = false
+  console.error(err)
+  if (err?.statusCode === 503) {
+    errorMessage.value = 'Tất cả các slot đã đầy (50/50 VĐV). Vui lòng liên hệ admin để được hỗ trợ.'
+  } else {
+    errorMessage.value = `Không thể kết nối: ${err?.data?.message || err?.message || 'Lỗi không xác định'}`
   }
 }
 
@@ -248,6 +345,83 @@ onMounted(async () => {
   color: var(--color-text-secondary);
   max-width: 500px;
   margin: 0 auto;
+}
+
+/* Tabs */
+.login-tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.login-tab {
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border-glass);
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-full);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.login-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary);
+}
+
+.login-tab--active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Selectors */
+.returning-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  text-align: left;
+}
+
+.select-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.select-group label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.glass-select {
+  width: 100%;
+  padding: var(--space-md);
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border-glass);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.glass-select:focus {
+  border-color: var(--color-accent);
+}
+
+.glass-select option {
+  background: #1e1e1e;
+  color: white;
 }
 
 /* Team Selection */

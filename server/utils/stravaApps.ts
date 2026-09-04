@@ -93,7 +93,7 @@ export async function findAvailableApp(): Promise<StravaAppConfig | null> {
     const appIndex = data.strava_app_index || 1
     userCounts[appIndex] = (userCounts[appIndex] || 0) + 1
   })
-
+  console.log(userCounts)
   // Find the first app that has fewer than MAX_USERS_PER_APP
   for (const app of apps) {
     const userCount = userCounts[app.index] || 0
