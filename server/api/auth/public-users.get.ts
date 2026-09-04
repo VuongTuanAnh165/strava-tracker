@@ -6,6 +6,7 @@
  */
 // defineCachedEventHandler is auto-imported by Nuxt/Nitro
 import { useFirebaseAdmin } from '../../utils/firebase'
+import { getAppByIndex } from '../../utils/stravaApps'
 
 export default defineCachedEventHandler(async (event) => {
   const db = useFirebaseAdmin()
@@ -16,15 +17,20 @@ export default defineCachedEventHandler(async (event) => {
     name: string
     teamId: string
     appIndex: number
+    clientId: string
   }> = []
 
   usersSnapshot.forEach(doc => {
     const data = doc.data()
+    const appIndex = data.strava_app_index || 1
+    const appConfig = getAppByIndex(appIndex)
+
     publicUsers.push({
       stravaId: doc.id,
       name: data.name || 'Unknown Athlete',
       teamId: data.team_id || '',
-      appIndex: data.strava_app_index || 1
+      appIndex: appIndex,
+      clientId: appConfig.clientId
     })
   })
 
@@ -35,5 +41,5 @@ export default defineCachedEventHandler(async (event) => {
 }, {
   maxAge: 60 * 30, // Cache for 30 minutes
   name: 'publicUsersData',
-  getKey: () => 'global'
+  getKey: () => 'global_v2'
 })
