@@ -89,6 +89,10 @@
                 :current-user-strava-id="user?.strava_id"
               />
             </section>
+            
+            <section class="dashboard__section animate-fade-in-up delay-3">
+              <RaceRules />
+            </section>
           </div>
         </template>
       </div>
@@ -316,7 +320,7 @@ async function syncData() {
 
 .dashboard__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: var(--space-2xl);
 }
 

@@ -91,6 +91,9 @@
                   <button class="btn btn--ghost btn--full mt-2" @click="loadData" :disabled="isLoadingData">
                     {{ isLoadingData ? 'Loading...' : '🔃 Làm mới dữ liệu' }}
                   </button>
+                  <button class="btn btn--ghost btn--full mt-2" @click="showRulesModal = true">
+                    📋 Xem Thể lệ & Quy định
+                  </button>
                 </div>
 
                 <!-- Sync Results -->
@@ -120,6 +123,14 @@
           </div>
         </div>
       </main>
+
+      <!-- Rules Modal -->
+      <div v-if="showRulesModal" class="modal-overlay" @click="showRulesModal = false">
+        <div class="modal-content animate-fade-in-up" @click.stop>
+          <button class="modal-close" @click="showRulesModal = false">&times;</button>
+          <RaceRules />
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -134,6 +145,7 @@ const isLoadingData = ref(false)
 const isSyncing = ref(false)
 const syncResults = ref<any>(null)
 const syncingUserId = ref<string | null>(null)
+const showRulesModal = ref(false)
 
 const teamA = computed(() => adminData.value?.teams?.find((t: any) => t.id === 'team_a'))
 const teamB = computed(() => adminData.value?.teams?.find((t: any) => t.id === 'team_b'))
@@ -339,8 +351,6 @@ async function syncUser(stravaId: string) {
 /* Admin Controls */
 .admin-controls {
   padding: var(--space-xl);
-  position: sticky;
-  top: 100px;
 }
 
 .admin-controls__header {
@@ -411,6 +421,55 @@ async function syncUser(stravaId: string) {
 .text-success { color: var(--color-success); font-weight: 600; }
 .text-warning { color: var(--color-warning); font-weight: 600; }
 .text-muted { color: var(--color-text-muted); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-md);
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-glass);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  /* The RaceRules component handles its own padding */
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
 
 @media (max-width: 1024px) {
   .dashboard__grid {
