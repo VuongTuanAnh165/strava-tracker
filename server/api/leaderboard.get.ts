@@ -6,10 +6,10 @@
  * Returns teams and individual rankings.
  * Fallback for when Firebase realtime listener is not available.
  */
-import { defineEventHandler } from 'h3'
+// defineCachedEventHandler is auto-imported by Nuxt/Nitro
 import { useFirebaseAdmin } from '../utils/firebase'
 
-export default defineEventHandler(async () => {
+export default defineCachedEventHandler(async () => {
   const db = useFirebaseAdmin()
 
   // Fetch teams
@@ -54,4 +54,8 @@ export default defineEventHandler(async () => {
     users,
     activities,
   }
+}, {
+  maxAge: 60 * 5, // Cache for 5 minutes
+  name: 'leaderboardData',
+  getKey: () => 'global'
 })

@@ -4,10 +4,10 @@
  * 
  * GET /api/auth/public-users
  */
-import { defineEventHandler } from 'h3'
+// defineCachedEventHandler is auto-imported by Nuxt/Nitro
 import { useFirebaseAdmin } from '../../utils/firebase'
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const db = useFirebaseAdmin()
   const usersSnapshot = await db.collection('users').get()
 
@@ -32,4 +32,8 @@ export default defineEventHandler(async (event) => {
   publicUsers.sort((a, b) => a.name.localeCompare(b.name))
 
   return publicUsers
+}, {
+  maxAge: 60 * 10, // Cache for 10 minutes
+  name: 'publicUsersData',
+  getKey: () => 'global'
 })
