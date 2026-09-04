@@ -43,11 +43,6 @@
               <span class="race-info__label">Tổng Users</span>
               <span class="race-info__value race-info__value--highlight">{{ adminData?.totalUsers || 0 }}</span>
             </div>
-            <div class="race-info__divider"></div>
-            <div class="race-info__item">
-              <span class="race-info__label">Tổng Activities</span>
-              <span class="race-info__value race-info__value--highlight">{{ adminData?.totalActivities || 0 }}</span>
-            </div>
             
             <template v-for="team in adminData?.teams" :key="team.id">
               <div class="race-info__divider"></div>
@@ -334,7 +329,7 @@ async function syncUser(stravaId: string) {
 
 .dashboard__grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: var(--space-2xl);
 }
 

@@ -35,7 +35,6 @@
         <span class="leaderboard__cell leaderboard__cell--user">Vận động viên</span>
         <span class="leaderboard__cell leaderboard__cell--team">Đội</span>
         <span class="leaderboard__cell leaderboard__cell--km">Tổng KM</span>
-        <span class="leaderboard__cell leaderboard__cell--runs">Số bài</span>
         <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">Hành động</span>
       </div>
 
@@ -78,10 +77,6 @@
         <span class="leaderboard__cell leaderboard__cell--km">
           <strong>{{ user.total_km?.toFixed(1) || '0.0' }}</strong>
           <small>km</small>
-        </span>
-
-        <span class="leaderboard__cell leaderboard__cell--runs">
-          {{ user.activity_count || 0 }}
         </span>
 
         <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">
@@ -165,7 +160,7 @@ function getRankBadgeClass(rank: number) {
 
 .leaderboard__row {
   display: grid;
-  grid-template-columns: 50px 1fr 100px 100px 70px;
+  grid-template-columns: 50px 1fr 100px 100px;
   align-items: center;
   padding: var(--space-md) var(--space-sm);
   border-radius: var(--radius-sm);
@@ -173,7 +168,7 @@ function getRankBadgeClass(rank: number) {
 }
 
 .leaderboard--admin .leaderboard__row {
-  grid-template-columns: 50px 1fr 100px 100px 70px 80px;
+  grid-template-columns: 50px 1fr 100px 100px 80px;
 }
 
 .leaderboard__row:not(.leaderboard__row--header):hover {
@@ -255,15 +250,7 @@ function getRankBadgeClass(rank: number) {
   }
 
   .leaderboard--admin .leaderboard__row {
-    grid-template-columns: 40px 1fr 70px 60px 70px;
-  }
-
-  .leaderboard__cell--runs {
-    display: none;
-  }
-
-  .leaderboard__row--header .leaderboard__cell--runs {
-    display: none;
+    grid-template-columns: 40px 1fr 70px 60px;
   }
 }
 

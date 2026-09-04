@@ -89,10 +89,6 @@
                 :current-user-strava-id="user?.strava_id"
               />
             </section>
-
-            <section class="dashboard__section animate-fade-in-up delay-3">
-              <ActivityFeed :activities="activities" :users="users" />
-            </section>
           </div>
         </template>
       </div>
@@ -115,7 +111,6 @@ const { user, isLoggedIn, checkSession, logout } = useAuth()
 const {
   teams,
   users,
-  activities,
   isLoading,
   error,
   lastUpdated,
@@ -321,7 +316,7 @@ async function syncData() {
 
 .dashboard__grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-2xl);
 }
 

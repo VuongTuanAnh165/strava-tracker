@@ -40,7 +40,6 @@ interface Activity {
 export function useLeaderboard() {
   const teams = ref<Team[]>([])
   const users = ref<UserRanking[]>([])
-  const activities = ref<Activity[]>([])
   const isLoading = ref(true)
   const error = ref<string | null>(null)
   const lastUpdated = ref<Date | null>(null)
@@ -53,7 +52,6 @@ export function useLeaderboard() {
       const data = await $fetch('/api/leaderboard')
       teams.value = data.teams as Team[]
       users.value = data.users as UserRanking[]
-      activities.value = data.activities as Activity[]
       lastUpdated.value = new Date()
     } catch (err: any) {
       error.value = err.message || 'Failed to load leaderboard'
@@ -96,7 +94,6 @@ export function useLeaderboard() {
   return {
     teams,
     users,
-    activities,
     isLoading,
     error,
     lastUpdated,

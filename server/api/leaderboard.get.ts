@@ -37,22 +37,11 @@ export default defineCachedEventHandler(async () => {
     }
   })
 
-  // Fetch recent activities (last 20)
-  const activitiesSnapshot = await db
-    .collection('activities')
-    .orderBy('processed_at', 'desc')
-    .limit(20)
-    .get()
 
-  const activities = activitiesSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }))
 
   return {
     teams,
     users,
-    activities,
   }
 }, {
   maxAge: 60 * 5, // Cache for 5 minutes

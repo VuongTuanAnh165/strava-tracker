@@ -46,13 +46,9 @@ export default defineEventHandler(async (event) => {
     ...doc.data(),
   }))
 
-  // Get activity count efficiently using aggregate query
-  const activitiesCountSnapshot = await db.collection('activities').count().get()
-
   return {
     teams,
     users,
     totalUsers: users.length,
-    totalActivities: activitiesCountSnapshot.data().count,
   }
 })

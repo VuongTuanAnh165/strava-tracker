@@ -127,13 +127,13 @@
             </template>
             <template v-else>
               <svg class="strava-logo" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
               </svg>
-              Tiếp tục với Strava
+              Vào trang chủ ngay
             </template>
           </button>
           <p class="login-connect__hint" v-if="!returningUser">⬆️ Vui lòng chọn tên của bạn</p>
-          <p class="login-connect__hint" v-else>Đăng nhập lại bằng đúng App bạn đã dùng</p>
+          <p class="login-connect__hint" v-else>Đăng nhập trực tiếp (Bỏ qua Strava)</p>
         </div>
 
         <!-- Error message -->
@@ -230,10 +230,17 @@ async function connectStravaReturning() {
   errorMessage.value = ''
 
   try {
-    // Fetch specific app config for this returning user
     const user = returningUser.value
-    const data = await $fetch<{ appIndex: number; clientId: string }>(`/api/auth/available-app?appIndex=${user.appIndex}`)
-    redirectToStrava(data.clientId, user.teamId, user.appIndex)
+    await $fetch('/api/auth/direct-login', {
+      method: 'POST',
+      body: { stravaId: user.stravaId }
+    })
+    
+    // Check session to update state and redirect
+    await checkSession()
+    if (isLoggedIn.value) {
+      window.location.href = '/' // Force full reload to ensure clear state
+    }
   } catch (err: any) {
     handleConnectError(err)
   }
