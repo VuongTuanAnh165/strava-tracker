@@ -44,7 +44,7 @@ export default defineCachedEventHandler(async () => {
     users,
   }
 }, {
-  maxAge: 60 * 5, // Cache for 5 minutes
+  maxAge: 60 * 15, // Cache for 15 minutes
   name: 'leaderboardData',
   getKey: () => 'global'
 })

@@ -33,7 +33,7 @@ export default defineCachedEventHandler(async (event) => {
 
   return publicUsers
 }, {
-  maxAge: 60 * 10, // Cache for 10 minutes
+  maxAge: 60 * 30, // Cache for 30 minutes
   name: 'publicUsersData',
   getKey: () => 'global'
 })
