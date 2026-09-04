@@ -86,13 +86,7 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
     }
   }
 
-  // Rule 7: Max Speed Check — detects motorized transport
-  if (activity.max_speed && activity.max_speed > MAX_SPEED_MS) {
-    return {
-      valid: false,
-      reason: `Vận tốc tối đa quá cao: ${(activity.max_speed * 3.6).toFixed(1)} km/h (Giới hạn: ${(MAX_SPEED_MS * 3.6).toFixed(1)} km/h). Nghi ngờ dùng phương tiện.`,
-    }
-  }
+  // Rule 7: (Đã gỡ bỏ) Max Speed Check — Thường xuyên phạt oan do nhiễu sóng GPS.
 
   // Rule 8: Auto-Pause Exploit Check (Rest Ratio)
   if (activity.moving_time > 0) {
