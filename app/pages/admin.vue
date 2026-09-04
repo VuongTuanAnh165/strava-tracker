@@ -1,13 +1,23 @@
 <template>
-  <div class="admin-page">
-    <div class="container">
-      <header class="admin-header animate-fade-in-up">
-        <h1 class="admin-header__title">⚙️ Admin Dashboard</h1>
-        <NuxtLink to="/" class="btn btn--ghost btn--sm">← Về trang chủ</NuxtLink>
-      </header>
+  <div class="dashboard">
+    <!-- Header -->
+    <header class="dashboard__header">
+      <div class="container">
+        <div class="header__inner">
+          <div class="header__brand">
+            <h1 class="header__title">⚙️ Admin Dashboard</h1>
+          </div>
 
-      <!-- Auth -->
-      <div v-if="!isAuthed" class="admin-auth glass-card animate-fade-in-up">
+          <div class="header__actions">
+            <NuxtLink to="/" class="btn btn--ghost btn--sm">← Về trang chủ</NuxtLink>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Auth -->
+    <div v-if="!isAuthed" class="container" style="padding-top: var(--space-3xl)">
+      <div class="admin-auth glass-card animate-fade-in-up">
         <h2>Đăng nhập Admin</h2>
         <div class="admin-auth__form">
           <input
@@ -21,116 +31,107 @@
         </div>
         <p v-if="authError" class="admin-error">{{ authError }}</p>
       </div>
-
-      <!-- Dashboard -->
-      <template v-else>
-        <!-- Stats -->
-        <div class="admin-stats animate-fade-in-up">
-          <div class="admin-stat glass-card">
-            <span class="admin-stat__value">{{ adminData?.totalUsers || 0 }}</span>
-            <span class="admin-stat__label">Tổng người dùng</span>
-          </div>
-          <div class="admin-stat glass-card">
-            <span class="admin-stat__value">{{ adminData?.totalActivities || 0 }}</span>
-            <span class="admin-stat__label">Tổng activities</span>
-          </div>
-          <div class="admin-stat glass-card" v-for="team in adminData?.teams" :key="team.id">
-            <span class="admin-stat__value" :style="{ color: team.color }">
-              {{ team.total_km?.toFixed(1) || 0 }} km
-            </span>
-            <span class="admin-stat__label">{{ team.name }} ({{ team.member_count || 0 }} người)</span>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="admin-actions animate-fade-in-up delay-1">
-          <h2>🔧 Hành động</h2>
-          <div class="admin-actions__buttons">
-            <button class="btn btn--primary" @click="syncAll" :disabled="isSyncing">
-              <span v-if="isSyncing" class="spinner"></span>
-              {{ isSyncing ? 'Đang sync...' : '🔄 Sync tất cả users' }}
-            </button>
-            <button class="btn btn--ghost" @click="loadData" :disabled="isLoadingData">
-              {{ isLoadingData ? 'Loading...' : '🔃 Refresh dữ liệu' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Sync Results -->
-        <div v-if="syncResults" class="admin-sync-results glass-card animate-fade-in-up">
-          <h3>Kết quả Sync</h3>
-          <div class="admin-sync-table">
-            <div class="admin-sync-row admin-sync-row--header">
-              <span>User</span>
-              <span>Accepted</span>
-              <span>Rejected</span>
-              <span>Duplicates</span>
-              <span>Status</span>
-            </div>
-            <div
-              v-for="result in syncResults.results"
-              :key="result.strava_id"
-              class="admin-sync-row"
-            >
-              <span>{{ result.name }}</span>
-              <span class="admin-sync-accepted">{{ result.accepted }}</span>
-              <span class="admin-sync-rejected">{{ result.rejected }}</span>
-              <span>{{ result.duplicates }}</span>
-              <span :class="result.error ? 'admin-sync-error' : 'admin-sync-success'">
-                {{ result.error || '✅' }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Users Table -->
-        <div class="admin-users glass-card animate-fade-in-up delay-2">
-          <h2>👥 Danh sách người dùng</h2>
-          <div class="admin-users__table">
-            <div class="admin-users__row admin-users__row--header">
-              <span>#</span>
-              <span>Tên</span>
-              <span>Đội</span>
-              <span>KM</span>
-              <span>Activities</span>
-              <span>Hành động</span>
-            </div>
-            <div
-              v-for="(user, index) in adminData?.users"
-              :key="user.strava_id"
-              class="admin-users__row"
-            >
-              <span>{{ index + 1 }}</span>
-              <span class="admin-users__name">
-                <img v-if="user.avatar" :src="user.avatar" class="avatar avatar--sm" referrerpolicy="no-referrer" />
-                {{ user.name }}
-              </span>
-              <span>
-                <span :class="user.team_id === 'team_a' ? 'badge badge--team-a' : 'badge badge--team-b'">
-                  {{ user.team_id === 'team_a' ? 'ACP1' : 'ACP2' }}
-                </span>
-              </span>
-              <span>{{ user.total_km?.toFixed(1) }}</span>
-              <span>{{ user.activity_count || 0 }}</span>
-              <span>
-                <button
-                  class="btn btn--ghost btn--sm"
-                  @click="syncUser(user.strava_id)"
-                  :disabled="syncingUserId === user.strava_id"
-                >
-                  {{ syncingUserId === user.strava_id ? '...' : 'Sync' }}
-                </button>
-              </span>
-            </div>
-          </div>
-        </div>
-      </template>
     </div>
+
+    <!-- Dashboard Main -->
+    <template v-else>
+      <!-- Race Info Bar (Stats) -->
+      <div class="race-info">
+        <div class="container">
+          <div class="race-info__inner">
+            <div class="race-info__item">
+              <span class="race-info__label">Tổng Users</span>
+              <span class="race-info__value race-info__value--highlight">{{ adminData?.totalUsers || 0 }}</span>
+            </div>
+            <div class="race-info__divider"></div>
+            <div class="race-info__item">
+              <span class="race-info__label">Tổng Activities</span>
+              <span class="race-info__value race-info__value--highlight">{{ adminData?.totalActivities || 0 }}</span>
+            </div>
+            
+            <template v-for="team in adminData?.teams" :key="team.id">
+              <div class="race-info__divider"></div>
+              <div class="race-info__item">
+                <span class="race-info__label">{{ team.name }} ({{ team.member_count || 0 }} người)</span>
+                <span class="race-info__value" :style="{ color: team.color }">
+                  {{ team.total_km?.toFixed(1) || 0 }} km
+                </span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <main class="dashboard__main">
+        <div class="container">
+          <!-- Team Comparison -->
+          <section class="dashboard__section animate-fade-in-up">
+            <TeamCard :team-a="teamA" :team-b="teamB" />
+          </section>
+
+          <div class="dashboard__grid">
+            <!-- Leaderboard -->
+            <section class="dashboard__section animate-fade-in-up delay-2">
+              <LeaderBoard
+                :users="adminData?.users || []"
+                :is-admin="true"
+                :syncing-user-id="syncingUserId"
+                @sync-user="syncUser"
+              />
+            </section>
+
+            <!-- Admin Controls (Replaces Activity Feed) -->
+            <section class="dashboard__section animate-fade-in-up delay-3">
+              <div class="glass-card admin-controls">
+                <div class="admin-controls__header">
+                  <h2 class="section-title">🔧 Quản lý hệ thống</h2>
+                </div>
+                
+                <div class="admin-controls__actions">
+                  <button class="btn btn--primary btn--full" @click="syncAll" :disabled="isSyncing">
+                    <span v-if="isSyncing" class="spinner"></span>
+                    {{ isSyncing ? 'Đang sync...' : '🔄 Đồng bộ tất cả Users' }}
+                  </button>
+                  <button class="btn btn--ghost btn--full mt-2" @click="loadData" :disabled="isLoadingData">
+                    {{ isLoadingData ? 'Loading...' : '🔃 Làm mới dữ liệu' }}
+                  </button>
+                </div>
+
+                <!-- Sync Results -->
+                <div v-if="syncResults" class="admin-sync-results animate-fade-in">
+                  <h3 class="admin-sync-results__title">Kết quả Sync gần nhất</h3>
+                  <div class="admin-sync-table">
+                    <div class="admin-sync-row admin-sync-row--header">
+                      <span class="admin-sync-cell">User</span>
+                      <span class="admin-sync-cell text-center" title="Accepted">A</span>
+                      <span class="admin-sync-cell text-center" title="Rejected">R</span>
+                      <span class="admin-sync-cell text-center" title="Duplicates">D</span>
+                    </div>
+                    <div
+                      v-for="result in syncResults.results"
+                      :key="result.strava_id"
+                      class="admin-sync-row"
+                    >
+                      <span class="admin-sync-cell text-ellipsis" :title="result.name">{{ result.name }}</span>
+                      <span class="admin-sync-cell text-center text-success">{{ result.accepted }}</span>
+                      <span class="admin-sync-cell text-center text-warning">{{ result.rejected }}</span>
+                      <span class="admin-sync-cell text-center text-muted">{{ result.duplicates }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-const adminSecret = ref('')
+const savedSecret = useCookie('admin_secret', { maxAge: 60 * 60 * 24 * 7 }) // 7 days
+const adminSecret = ref(savedSecret.value || '')
 const isAuthed = ref(false)
 const authError = ref('')
 const adminData = ref<any>(null)
@@ -139,14 +140,25 @@ const isSyncing = ref(false)
 const syncResults = ref<any>(null)
 const syncingUserId = ref<string | null>(null)
 
+const teamA = computed(() => adminData.value?.teams?.find((t: any) => t.id === 'team_a'))
+const teamB = computed(() => adminData.value?.teams?.find((t: any) => t.id === 'team_b'))
+
+onMounted(async () => {
+  if (savedSecret.value) {
+    await authenticate()
+  }
+})
+
 async function authenticate() {
   authError.value = ''
   try {
     const data = await $fetch(`/api/admin/users?secret=${adminSecret.value}`)
     adminData.value = data
     isAuthed.value = true
+    savedSecret.value = adminSecret.value // Save cookie on success
   } catch (err: any) {
     authError.value = 'Sai Admin Secret'
+    savedSecret.value = null // Clear cookie if invalid
   }
 }
 
@@ -194,27 +206,43 @@ async function syncUser(stravaId: string) {
 </script>
 
 <style scoped>
-.admin-page {
+.dashboard {
   min-height: 100vh;
-  padding: var(--space-2xl) 0;
 }
 
-.admin-header {
+/* Header */
+.dashboard__header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 14, 23, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border-glass);
+}
+
+.header__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-2xl);
+  padding: var(--space-md) 0;
 }
 
-.admin-header__title {
-  font-size: var(--font-size-2xl);
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.header__title {
+  font-size: var(--font-size-lg);
   font-weight: 800;
 }
 
 /* Auth */
 .admin-auth {
   max-width: 400px;
-  margin: var(--space-3xl) auto;
+  margin: 0 auto;
   padding: var(--space-2xl);
   text-align: center;
 }
@@ -250,54 +278,105 @@ async function syncUser(stravaId: string) {
   font-size: var(--font-size-sm);
 }
 
-/* Stats */
-.admin-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-lg);
-  margin-bottom: var(--space-2xl);
+/* Race Info Bar (Stats) */
+.race-info {
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-glass);
 }
 
-.admin-stat {
-  padding: var(--space-xl);
-  text-align: center;
+.race-info__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+  padding: var(--space-md) 0;
+  flex-wrap: wrap;
 }
 
-.admin-stat__value {
-  display: block;
-  font-size: var(--font-size-3xl);
-  font-weight: 900;
-  margin-bottom: var(--space-xs);
+.race-info__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-.admin-stat__label {
-  font-size: var(--font-size-sm);
+.race-info__label {
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-/* Actions */
-.admin-actions {
+.race-info__value {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.race-info__value--highlight {
+  color: var(--color-accent);
+  font-size: var(--font-size-base);
+}
+
+.race-info__divider {
+  width: 1px;
+  height: 30px;
+  background: var(--color-border-glass);
+}
+
+/* Main Content */
+.dashboard__main {
+  padding: var(--space-2xl) 0;
+}
+
+.dashboard__section {
   margin-bottom: var(--space-2xl);
 }
 
-.admin-actions h2 {
+.dashboard__grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-2xl);
+}
+
+.mt-2 { margin-top: var(--space-sm); }
+.mt-4 { margin-top: var(--space-lg); }
+
+/* Admin Controls */
+.admin-controls {
+  padding: var(--space-xl);
+  position: sticky;
+  top: 100px;
+}
+
+.admin-controls__header {
   margin-bottom: var(--space-lg);
 }
 
-.admin-actions__buttons {
+.admin-controls__actions {
   display: flex;
-  gap: var(--space-md);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.btn--full {
+  width: 100%;
+  justify-content: center;
 }
 
 /* Sync Results */
 .admin-sync-results {
-  padding: var(--space-xl);
-  margin-bottom: var(--space-2xl);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-glass);
 }
 
-.admin-sync-results h3 {
-  margin-bottom: var(--space-lg);
+.admin-sync-results__title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md);
+  font-weight: 600;
 }
 
 .admin-sync-table {
@@ -306,77 +385,51 @@ async function syncUser(stravaId: string) {
 
 .admin-sync-row {
   display: grid;
-  grid-template-columns: 1fr 80px 80px 80px 1fr;
-  padding: var(--space-sm) 0;
+  grid-template-columns: 1fr 30px 30px 30px;
+  padding: var(--space-xs) 0;
   border-bottom: 1px solid var(--color-border-glass);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   align-items: center;
+  gap: var(--space-xs);
+}
+
+.admin-sync-row:last-child {
+  border-bottom: none;
 }
 
 .admin-sync-row--header {
   font-weight: 700;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  font-size: var(--font-size-xs);
 }
 
-.admin-sync-accepted {
-  color: var(--color-success);
-  font-weight: 600;
+.admin-sync-cell {
+  white-space: nowrap;
 }
 
-.admin-sync-rejected {
-  color: var(--color-warning);
-  font-weight: 600;
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.admin-sync-error {
-  color: var(--color-error);
-  font-size: var(--font-size-xs);
-}
+.text-center { text-align: center; }
+.text-success { color: var(--color-success); font-weight: 600; }
+.text-warning { color: var(--color-warning); font-weight: 600; }
+.text-muted { color: var(--color-text-muted); }
 
-.admin-sync-success {
-  color: var(--color-success);
-}
-
-/* Users Table */
-.admin-users {
-  padding: var(--space-xl);
-}
-
-.admin-users h2 {
-  margin-bottom: var(--space-lg);
-}
-
-.admin-users__table {
-  overflow-x: auto;
-}
-
-.admin-users__row {
-  display: grid;
-  grid-template-columns: 40px 1fr 100px 80px 80px 80px;
-  padding: var(--space-sm) 0;
-  border-bottom: 1px solid var(--color-border-glass);
-  font-size: var(--font-size-sm);
-  align-items: center;
-}
-
-.admin-users__row--header {
-  font-weight: 700;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  font-size: var(--font-size-xs);
-}
-
-.admin-users__name {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+@media (max-width: 1024px) {
+  .dashboard__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .admin-users__row {
-    grid-template-columns: 30px 1fr 70px 60px 60px;
+  .race-info__inner {
+    gap: var(--space-md);
+  }
+
+  .race-info__divider {
+    display: none;
   }
 }
 </style>

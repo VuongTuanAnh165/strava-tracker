@@ -1,5 +1,5 @@
 <template>
-  <div class="leaderboard glass-card">
+  <div class="leaderboard glass-card" :class="{ 'leaderboard--admin': isAdmin }">
     <div class="leaderboard__header">
       <h2 class="section-title">🏆 Bảng Xếp Hạng Cá Nhân</h2>
       <div class="leaderboard__filters">
@@ -36,6 +36,7 @@
         <span class="leaderboard__cell leaderboard__cell--team">Đội</span>
         <span class="leaderboard__cell leaderboard__cell--km">Tổng KM</span>
         <span class="leaderboard__cell leaderboard__cell--runs">Số bài</span>
+        <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">Hành động</span>
       </div>
 
       <div
@@ -82,6 +83,17 @@
         <span class="leaderboard__cell leaderboard__cell--runs">
           {{ user.activity_count || 0 }}
         </span>
+
+        <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">
+          <button
+            class="btn btn--ghost btn--sm"
+            @click="emit('sync-user', user.strava_id)"
+            :disabled="syncingUserId === user.strava_id"
+          >
+            <span v-if="syncingUserId === user.strava_id" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
+            <span v-else>Sync</span>
+          </button>
+        </span>
       </div>
 
       <div v-if="filteredUsers.length === 0" class="leaderboard__empty">
@@ -104,6 +116,12 @@ interface UserRanking {
 const props = defineProps<{
   users: UserRanking[]
   currentUserStravaId?: string
+  isAdmin?: boolean
+  syncingUserId?: string | null
+}>()
+
+const emit = defineEmits<{
+  (e: 'sync-user', stravaId: string): void
 }>()
 
 const filter = ref<'all' | 'team_a' | 'team_b'>('all')
@@ -152,6 +170,10 @@ function getRankBadgeClass(rank: number) {
   padding: var(--space-md) var(--space-sm);
   border-radius: var(--radius-sm);
   transition: background var(--transition-fast);
+}
+
+.leaderboard--admin .leaderboard__row {
+  grid-template-columns: 50px 1fr 100px 100px 70px 80px;
 }
 
 .leaderboard__row:not(.leaderboard__row--header):hover {
@@ -230,6 +252,10 @@ function getRankBadgeClass(rank: number) {
 @media (max-width: 768px) {
   .leaderboard__row {
     grid-template-columns: 40px 1fr 70px 80px;
+  }
+
+  .leaderboard--admin .leaderboard__row {
+    grid-template-columns: 40px 1fr 70px 60px 70px;
   }
 
   .leaderboard__cell--runs {
