@@ -14,7 +14,7 @@ export interface StravaAppConfig {
   webhookToken: string
 }
 
-const MAX_USERS_PER_APP = 9
+const MAX_USERS_PER_APP = 8
 
 /**
  * Parse and return all Strava app configs from environment.
