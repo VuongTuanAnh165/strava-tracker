@@ -5,8 +5,11 @@
  * 
  * Strava sends this GET request when you create a webhook subscription.
  * Must respond within 2 seconds with the challenge value.
+ * 
+ * Supports multiple Strava apps — verifies token against ALL configured apps.
  */
 import { defineEventHandler, getQuery, createError } from 'h3'
+import { isValidWebhookToken } from '../utils/stravaApps'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -25,10 +28,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check verify token matches our secret
-  const expectedToken = process.env.STRAVA_WEBHOOK_VERIFY_TOKEN
-  if (!expectedToken || verifyToken !== expectedToken) {
-    console.error(`[Webhook] Verify token mismatch: got "${verifyToken}", expected "${expectedToken}"`)
+  // Check verify token matches any of our configured apps
+  if (!verifyToken || !isValidWebhookToken(verifyToken)) {
+    console.error(`[Webhook] Verify token mismatch: got "${verifyToken}", no matching app found`)
     throw createError({
       statusCode: 403,
       statusMessage: 'Verify token mismatch',
@@ -41,3 +43,4 @@ export default defineEventHandler(async (event) => {
     'hub.challenge': challenge,
   }
 })
+

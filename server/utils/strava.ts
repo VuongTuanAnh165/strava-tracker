@@ -6,6 +6,7 @@
  */
 import { STRAVA_API_BASE, STRAVA_TOKEN_URL } from './constants'
 import { useFirebaseAdmin } from './firebase'
+import { getAppForUser } from './stravaApps'
 
 interface StravaTokenResponse {
   access_token: string
@@ -39,13 +40,17 @@ interface StravaActivity {
 /**
  * Exchange OAuth authorization code for access + refresh tokens.
  */
-export async function exchangeAuthCode(code: string): Promise<StravaTokenResponse> {
+export async function exchangeAuthCode(
+  code: string,
+  clientId: string,
+  clientSecret: string
+): Promise<StravaTokenResponse> {
   const response = await fetch(STRAVA_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_id: process.env.STRAVA_CLIENT_ID,
-      client_secret: process.env.STRAVA_CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       code,
       grant_type: 'authorization_code',
     }),
@@ -63,7 +68,11 @@ export async function exchangeAuthCode(code: string): Promise<StravaTokenRespons
  * Refresh an expired access token.
  * Strava tokens expire every 6 hours.
  */
-export async function refreshAccessToken(refreshToken: string): Promise<{
+export async function refreshAccessToken(
+  refreshToken: string,
+  clientId: string,
+  clientSecret: string
+): Promise<{
   access_token: string
   refresh_token: string
   expires_at: number
@@ -72,8 +81,8 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_id: process.env.STRAVA_CLIENT_ID,
-      client_secret: process.env.STRAVA_CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     }),
@@ -109,8 +118,10 @@ export async function getValidAccessToken(stravaId: string): Promise<string> {
   }
 
   // Token expired — refresh it
-  console.log(`[Strava] Refreshing token for user ${stravaId}`)
-  const newTokens = await refreshAccessToken(userData.refresh_token)
+  // Get the correct app credentials for this user
+  const appConfig = await getAppForUser(stravaId)
+  console.log(`[Strava] Refreshing token for user ${stravaId} using App${appConfig.index}`)
+  const newTokens = await refreshAccessToken(userData.refresh_token, appConfig.clientId, appConfig.clientSecret)
 
   // Update tokens in Firestore
   await db.collection('users').doc(stravaId).update({

@@ -6,15 +6,12 @@ export default defineNuxtConfig({
   // Runtime config — secrets stay server-side, public config goes to client
   runtimeConfig: {
     // Server-only (accessible via useRuntimeConfig().xxx in server routes)
-    stravaClientId: process.env.STRAVA_CLIENT_ID || '',
-    stravaClientSecret: process.env.STRAVA_CLIENT_SECRET || '',
-    stravaWebhookVerifyToken: process.env.STRAVA_WEBHOOK_VERIFY_TOKEN || '',
+    // Multi-app Strava config is read directly from STRAVA_APPS_CONFIG env in stravaApps.ts
     adminSecret: process.env.ADMIN_SECRET || '',
 
     // Public (accessible on both client and server)
     public: {
       appUrl: process.env.APP_URL || 'http://localhost:3000',
-      stravaClientId: process.env.STRAVA_CLIENT_ID || '',
       // Firebase client config (for onSnapshot realtime listener)
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
     },

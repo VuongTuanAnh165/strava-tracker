@@ -50,13 +50,19 @@
         <div class="login-connect animate-fade-in-up delay-3">
           <button
             class="btn btn--strava btn--lg"
-            :disabled="!selectedTeam"
+            :disabled="!selectedTeam || isConnecting"
             @click="connectStrava"
           >
-            <svg class="strava-logo" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-              <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-            </svg>
-            Kết nối với Strava
+            <template v-if="isConnecting">
+              <span class="btn-spinner"></span>
+              Đang kết nối...
+            </template>
+            <template v-else>
+              <svg class="strava-logo" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+              </svg>
+              Kết nối với Strava
+            </template>
           </button>
           <p class="login-connect__hint" v-if="!selectedTeam">
             ⬆️ Vui lòng chọn đội trước
@@ -120,6 +126,7 @@ const config = useRuntimeConfig()
 
 const selectedTeam = ref<'team_a' | 'team_b' | null>(null)
 const errorMessage = ref('')
+const isConnecting = ref(false)
 
 // Check for error from OAuth redirect
 onMounted(() => {
@@ -128,23 +135,37 @@ onMounted(() => {
   }
 })
 
-function connectStrava() {
+async function connectStrava() {
   if (!selectedTeam.value) return
 
-  const clientId = config.public.stravaClientId
-  const appUrl = config.public.appUrl
-  const redirectUri = `${appUrl}/api/auth/callback`
+  isConnecting.value = true
+  errorMessage.value = ''
 
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    approval_prompt: 'auto',
-    scope: 'activity:read_all',
-    state: selectedTeam.value,
-  })
+  try {
+    // Fetch available app from server (finds first app with < 10 users)
+    const data = await $fetch<{ appIndex: number; clientId: string }>('/api/auth/available-app')
 
-  window.location.href = `https://www.strava.com/oauth/authorize?${params.toString()}`
+    const appUrl = config.public.appUrl
+    const redirectUri = `${appUrl}/api/auth/callback`
+
+    const params = new URLSearchParams({
+      client_id: data.clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      approval_prompt: 'auto',
+      scope: 'activity:read_all',
+      state: `${selectedTeam.value}:${data.appIndex}`,
+    })
+
+    window.location.href = `https://www.strava.com/oauth/authorize?${params.toString()}`
+  } catch (err: any) {
+    isConnecting.value = false
+    if (err?.statusCode === 503) {
+      errorMessage.value = 'Tất cả các slot đã đầy (50/50 VĐV). Vui lòng liên hệ admin để được hỗ trợ.'
+    } else {
+      errorMessage.value = `Không thể kết nối: ${err?.data?.message || err?.message || 'Lỗi không xác định'}`
+    }
+  }
 }
 
 // If already logged in, redirect to dashboard
@@ -333,6 +354,20 @@ onMounted(async () => {
 
 .strava-logo {
   flex-shrink: 0;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Error */
