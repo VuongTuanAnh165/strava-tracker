@@ -13,7 +13,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // 1. Check Nitro Storage Cache directly
-  const { useStorage } = await import('#imports')
   const cacheKey = `nitro:handlers:userActivities:${stravaId}.json`
   const cachedData = await useStorage('cache').getItem(cacheKey)
   if (cachedData) {

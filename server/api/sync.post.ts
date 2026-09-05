@@ -132,7 +132,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (accepted > 0) {
-      const { useStorage } = await import('#imports')
       await useStorage('cache').removeItem('nitro:handlers:leaderboardData:global.json')
       await useStorage('cache').removeItem(`nitro:handlers:userActivities:${stravaId}.json`)
     }
