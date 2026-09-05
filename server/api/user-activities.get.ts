@@ -1,6 +1,5 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { useFirebaseAdmin } from '../utils/firebase'
-import { useStorage } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -13,16 +12,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 1. Check Nitro Storage Cache directly
-  const cacheKey = `nitro:handlers:userActivities:${stravaId}.json`
-  const cachedData = await useStorage('cache').getItem(cacheKey)
-  if (cachedData) {
-    return cachedData // Return from RAM/Redis
-  }
-
   const db = useFirebaseAdmin()
 
-  // 2. Fetch from Firebase if not cached
+  // Fetch from Firebase directly (protected by Edge CDN if swr enabled, or small enough not to matter)
   const activitiesSnapshot = await db
     .collection('activities')
     .where('strava_id', '==', stravaId)
@@ -44,9 +36,6 @@ export default defineEventHandler(async (event) => {
   activities.sort((a, b) => {
     return new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime()
   })
-
-  // 3. Save to Nitro Storage Cache for future requests
-  await useStorage('cache').setItem(cacheKey, activities)
 
   return activities
 })

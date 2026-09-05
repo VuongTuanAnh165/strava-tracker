@@ -105,13 +105,16 @@ const props = defineProps<{
 }>()
 
 function formatDate(dateString: string) {
-  const d = new Date(dateString)
+  // Strava's start_date_local notoriously includes 'Z' at the end even though it's local time.
+  // We must remove the 'Z' so Javascript parses it as Local time, not UTC.
+  const cleanDateString = dateString.replace('Z', '')
+  const d = new Date(cleanDateString)
   return d.toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
     minute: '2-digit'
-  })
+  }).replace(',', '') // Remove comma for cleaner display
 }
 
 function formatPace(secondsPerKm: number) {

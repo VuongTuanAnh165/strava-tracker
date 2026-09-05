@@ -6,10 +6,10 @@
  * Returns teams and individual rankings.
  * Fallback for when Firebase realtime listener is not available.
  */
-// defineCachedEventHandler is auto-imported by Nuxt/Nitro
+import { defineEventHandler } from 'h3'
 import { useFirebaseAdmin } from '../utils/firebase'
 
-export default defineCachedEventHandler(async () => {
+export default defineEventHandler(async () => {
   const db = useFirebaseAdmin()
 
   // Fetch teams
@@ -38,7 +38,6 @@ export default defineCachedEventHandler(async () => {
   })
 
   // Dynamically calculate actual member count and total_km from the users array
-  // This prevents mismatches if admin manually deletes users from Firebase
   const calculatedTeams = teams.map(team => {
     const teamUsers = users.filter(u => u.team_id === team.id)
     return {
@@ -51,8 +50,4 @@ export default defineCachedEventHandler(async () => {
     teams: calculatedTeams,
     users,
   }
-}, {
-  maxAge: 60 * 60 * 24 * 365, // Cache for 1 year, invalidated explicitly on webhook/sync
-  name: 'leaderboardData',
-  getKey: () => 'global'
 })

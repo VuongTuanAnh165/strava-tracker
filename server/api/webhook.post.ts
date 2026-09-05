@@ -10,7 +10,6 @@ import { defineEventHandler, readBody } from 'h3'
 import { getValidAccessToken, fetchActivityDetail } from '../utils/strava'
 import { validateActivity, isActivityDuplicate, processValidActivity, removeProcessedActivity } from '../utils/antiCheat'
 import { useFirebaseAdmin } from '../utils/firebase'
-import { useStorage } from '#imports'
 
 interface StravaWebhookEvent {
   object_type: 'activity' | 'athlete'
@@ -106,9 +105,7 @@ async function processWebhookEvent(body: StravaWebhookEvent): Promise<void> {
       validation.paceSecondsPerKm!
     )
 
-    // Clear caches to trigger real-time update
-    await useStorage('cache').removeItem('nitro:handlers:leaderboardData:global.json')
-    await useStorage('cache').removeItem(`nitro:handlers:userActivities:${stravaId}.json`)
+    // Caches are now managed entirely by Vercel CDN (swr) and fetch directly from Firebase
   } catch (err: any) {
     console.error(`[Webhook] Failed to process activity ${activityId}:`, err.message)
   }
