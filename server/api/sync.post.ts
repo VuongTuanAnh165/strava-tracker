@@ -9,6 +9,7 @@
 import { defineEventHandler, readBody, getCookie, createError } from 'h3'
 import { getValidAccessToken, fetchActivitiesInRange } from '../utils/strava'
 import { validateActivity, processValidActivity } from '../utils/antiCheat'
+import { useStorage } from '#imports'
 import { useFirebaseAdmin } from '../utils/firebase'
 import { RACE_START, RACE_END } from '../utils/constants'
 

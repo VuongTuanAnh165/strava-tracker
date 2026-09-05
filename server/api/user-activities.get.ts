@@ -1,5 +1,6 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { useFirebaseAdmin } from '../utils/firebase'
+import { useStorage } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
