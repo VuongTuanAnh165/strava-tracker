@@ -1,7 +1,7 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { useFirebaseAdmin } from '../utils/firebase'
 
-export default defineCachedEventHandler(async (event) => {
+export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const stravaId = query.strava_id as string
 
@@ -12,9 +12,17 @@ export default defineCachedEventHandler(async (event) => {
     })
   }
 
+  // 1. Check Nitro Storage Cache directly
+  const { useStorage } = await import('#imports')
+  const cacheKey = `nitro:handlers:userActivities:${stravaId}.json`
+  const cachedData = await useStorage('cache').getItem(cacheKey)
+  if (cachedData) {
+    return cachedData // Return from RAM/Redis
+  }
+
   const db = useFirebaseAdmin()
 
-  // Fetch activities for the specific user (remove orderBy to avoid requiring a Firebase Composite Index)
+  // 2. Fetch from Firebase if not cached
   const activitiesSnapshot = await db
     .collection('activities')
     .where('strava_id', '==', stravaId)
@@ -37,12 +45,8 @@ export default defineCachedEventHandler(async (event) => {
     return new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime()
   })
 
+  // 3. Save to Nitro Storage Cache for future requests
+  await useStorage('cache').setItem(cacheKey, activities)
+
   return activities
-}, {
-  maxAge: 60 * 60 * 24 * 365, // Cache for 1 year, invalidated explicitly on webhook/sync
-  name: 'userActivities',
-  getKey: (event) => {
-    const q = getQuery(event)
-    return String(q.strava_id || 'default')
-  }
 })

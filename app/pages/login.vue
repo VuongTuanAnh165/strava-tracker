@@ -112,9 +112,9 @@
         <ul class="login-rules__list">
           <li>Thời gian: <strong>01/09 → 24/09/2026</strong></li>
           <li>Pace hợp lệ: <strong>4:00 – 15:00 phút/km</strong></li>
-          <li>Chỉ tính bài chạy bộ (Run/VirtualRun)</li>
-          <li>Không chấp nhận nhập tay (manual entry)</li>
-          <li>Dữ liệu được đồng bộ tự động qua Strava</li>
+          <li>Cự ly tối thiểu: <strong>1 km / bài chạy</strong></li>
+          <li>Chỉ tính chạy bộ ngoài trời: <strong>Run, VirtualRun, TrailRun</strong></li>
+          <li>Không tính: Chạy máy (Treadmill), nhập tay (Manual), Pause quá 50% thời gian</li>
         </ul>
       </div>
     </div>

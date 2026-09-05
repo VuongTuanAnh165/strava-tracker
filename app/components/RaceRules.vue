@@ -7,9 +7,10 @@
       <li><strong>Thời gian:</strong> 01/09 → 24/09/2026</li>
       <li><strong>Pace hợp lệ:</strong> 4:00 – 15:00 phút/km</li>
       <li><strong>Cự ly tối thiểu:</strong> 1 km / bài chạy</li>
-      <li><strong>Loại hình:</strong> Chỉ tính Chạy bộ (Run, VirtualRun, TrailRun)</li>
+      <li><strong>Loại hình:</strong> Chỉ tính chạy bộ (Run, VirtualRun, TrailRun).</li>
       <li><strong>Thiết bị:</strong> Bắt buộc chạy ngoài trời có GPS. Không chấp nhận máy chạy bộ (Treadmill).</li>
-      <li><strong>Gian lận:</strong> Không chấp nhận nhập tay (Manual). Từ chối các bài bị Strava gắn cờ (Flagged).</li>
+      <li><strong>Tạm dừng (Pause):</strong> Thời gian nghỉ ngắt quãng không được quá dài (Tổng thời gian Elapsed Time không vượt quá 1.5 lần thời gian chạy Moving Time).</li>
+      <li><strong>Gian lận:</strong> Không chấp nhận nhập tay (Manual) hoặc bài chạy bị Strava gắn cờ nghi ngờ (Flagged).</li>
     </ul>
   </div>
 </template>
