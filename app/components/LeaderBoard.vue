@@ -41,12 +41,13 @@
       <div
         v-for="(user, index) in filteredUsers"
         :key="user.strava_id"
-        class="leaderboard__row animate-fade-in-up"
+        class="leaderboard__row animate-fade-in-up clickable"
         :class="{
           'leaderboard__row--highlight': currentUserStravaId === user.strava_id,
           'leaderboard__row--top': index < 3,
         }"
         :style="{ animationDelay: `${index * 0.05}s` }"
+        @click="openModal(user)"
       >
         <span class="leaderboard__cell leaderboard__cell--rank">
           <span :class="getRankBadgeClass(index + 1)">
@@ -82,7 +83,7 @@
         <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">
           <button
             class="btn btn--ghost btn--sm"
-            @click="emit('sync-user', user.strava_id)"
+            @click.stop="emit('sync-user', user.strava_id)"
             :disabled="syncingUserId === user.strava_id"
           >
             <span v-if="syncingUserId === user.strava_id" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
@@ -95,10 +96,25 @@
         <p>Chưa có dữ liệu. Hãy kết nối Strava để bắt đầu!</p>
       </div>
     </div>
+
+    <!-- User Activities Modal -->
+    <Teleport to="body">
+      <div v-if="selectedUser" class="modal-overlay" @click="selectedUser = null">
+        <div class="modal-content animate-fade-in-up" @click.stop>
+          <button class="modal-close" @click="selectedUser = null">&times;</button>
+          <UserActivitiesModal 
+            :user="{...selectedUser, activities: selectedUserActivities}"
+            :is-loading="isLoadingActivities" 
+          />
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
+import UserActivitiesModal from './UserActivitiesModal.vue'
+
 interface UserRanking {
   strava_id: string
   name: string
@@ -120,6 +136,23 @@ const emit = defineEmits<{
 }>()
 
 const filter = ref<'all' | 'team_a' | 'team_b'>('all')
+const selectedUser = ref<UserRanking | null>(null)
+const selectedUserActivities = ref<any[]>([])
+const isLoadingActivities = ref(false)
+
+async function openModal(user: UserRanking) {
+  selectedUser.value = user
+  selectedUserActivities.value = [] // clear previous
+  isLoadingActivities.value = true
+  try {
+    const data = await $fetch(`/api/user-activities?strava_id=${user.strava_id}`)
+    selectedUserActivities.value = data as any[]
+  } catch (err) {
+    console.error('Failed to fetch activities', err)
+  } finally {
+    isLoadingActivities.value = false
+  }
+}
 
 const filteredUsers = computed(() => {
   if (filter.value === 'all') return props.users
@@ -164,7 +197,11 @@ function getRankBadgeClass(rank: number) {
   align-items: center;
   padding: var(--space-md) var(--space-sm);
   border-radius: var(--radius-sm);
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.leaderboard__row.clickable {
+  cursor: pointer;
 }
 
 .leaderboard--admin .leaderboard__row {
@@ -173,6 +210,10 @@ function getRankBadgeClass(rank: number) {
 
 .leaderboard__row:not(.leaderboard__row--header):hover {
   background: var(--color-bg-glass);
+}
+
+.leaderboard__row.clickable:hover {
+  transform: translateX(4px);
 }
 
 .leaderboard__row--header {
@@ -242,6 +283,52 @@ function getRankBadgeClass(rank: number) {
   color: var(--color-text-muted);
   font-weight: 700;
   font-size: var(--font-size-xs);
+}
+
+/* Modal specific styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-md);
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {

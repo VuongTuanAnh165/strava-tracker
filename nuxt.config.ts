@@ -27,8 +27,10 @@ export default defineNuxtConfig({
 
   // Enable Vercel Edge Caching (CDN) to protect Firebase from read spikes
   routeRules: {
-    // Cache on CDN for 2 minutes (SWR). Max 1 Firebase read every 2 mins globally!
-    '/api/leaderboard': { swr: 120 },
+    // Cache on CDN for 15 seconds (SWR). Backend cache handles Firebase protection!
+    '/api/leaderboard': { swr: 15 },
+    // Protect user-activities from spam clicks (CDN absorbs it)
+    '/api/user-activities': { swr: 60 },
     // Cache on CDN for 30 minutes (SWR). 
     '/api/auth/public-users': { swr: 1800 },
   },

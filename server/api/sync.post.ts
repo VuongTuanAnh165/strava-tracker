@@ -131,6 +131,12 @@ export default defineEventHandler(async (event) => {
       results,
     }
 
+    if (accepted > 0) {
+      const { useStorage } = await import('#imports')
+      await useStorage('cache').removeItem('nitro:handlers:leaderboardData:global.json')
+      await useStorage('cache').removeItem(`nitro:handlers:userActivities:${stravaId}.json`)
+    }
+
     console.log(
       `[Sync] ✅ Sync complete for ${userData.name}: ${accepted} accepted, ${rejected} rejected, ${duplicates} duplicates`
     )

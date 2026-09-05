@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
 
   // Get all users
   const usersSnapshot = await db.collection('users').orderBy('total_km', 'desc').get()
+
   const users = usersSnapshot.docs.map((doc) => {
     const data = doc.data()
     return {

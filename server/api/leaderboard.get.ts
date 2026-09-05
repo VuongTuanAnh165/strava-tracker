@@ -52,7 +52,7 @@ export default defineCachedEventHandler(async () => {
     users,
   }
 }, {
-  maxAge: 60 * 15, // Cache for 15 minutes
+  maxAge: 60 * 60 * 24 * 365, // Cache for 1 year, invalidated explicitly on webhook/sync
   name: 'leaderboardData',
   getKey: () => 'global'
 })
