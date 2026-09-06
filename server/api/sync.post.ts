@@ -8,7 +8,7 @@
  */
 import { defineEventHandler, readBody, getCookie, createError } from 'h3'
 import { getValidAccessToken, fetchActivitiesInRange } from '../utils/strava'
-import { validateActivity, processValidActivity } from '../utils/antiCheat'
+import { validateActivity, processValidActivity, processRejectedActivity } from '../utils/antiCheat'
 import { useFirebaseAdmin } from '../utils/firebase'
 import { RACE_START, RACE_END } from '../utils/constants'
 
@@ -96,6 +96,15 @@ export default defineEventHandler(async (event) => {
           status: 'rejected',
           reason: validation.reason,
         })
+        
+        // Save the rejected activity to Firebase so the user can see it in their history modal
+        await processRejectedActivity(
+          activity,
+          stravaId,
+          userData.team_id,
+          validation.reason || 'Lý do không xác định'
+        )
+        
         console.log(`[Sync] ❌ Rejected: "${activity.name}" — ${validation.reason}`)
         continue
       }

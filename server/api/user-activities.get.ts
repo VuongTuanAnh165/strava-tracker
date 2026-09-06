@@ -29,6 +29,8 @@ export default defineEventHandler(async (event) => {
       moving_time: data.moving_time,
       pace: data.pace,
       start_date_local: data.start_date_local,
+      status: data.status || 'valid', // Default to valid for old activities
+      reason: data.reason || null,
     }
   })
 

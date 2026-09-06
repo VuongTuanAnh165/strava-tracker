@@ -9,7 +9,7 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { useFirebaseAdmin } from '../../utils/firebase'
 import { getValidAccessToken, fetchActivitiesInRange } from '../../utils/strava'
-import { validateActivity, processValidActivity } from '../../utils/antiCheat'
+import { validateActivity, processValidActivity, processRejectedActivity } from '../../utils/antiCheat'
 import { RACE_START, RACE_END } from '../../utils/constants'
 
 export default defineEventHandler(async (event) => {
@@ -76,6 +76,13 @@ export default defineEventHandler(async (event) => {
         const validation = validateActivity(activity)
         if (!validation.valid) {
           rejected++
+          // Save the rejected activity to Firebase
+          await processRejectedActivity(
+            activity,
+            user.strava_id,
+            user.team_id,
+            validation.reason || 'Lý do không xác định'
+          )
           continue
         }
 

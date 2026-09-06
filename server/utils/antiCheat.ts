@@ -69,7 +69,9 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
   }
 
   // Rule 5: Must be within race date range
-  const activityDate = new Date(activity.start_date_local)
+  // We use start_date (UTC) rather than start_date_local to compare against RACE_START (absolute timestamp).
+  // Strava's start_date_local has a 'Z' appended, causing it to be shifted twice by JS Date.
+  const activityDate = new Date(activity.start_date)
   if (activityDate < RACE_START || activityDate > RACE_END) {
     return {
       valid: false,
@@ -180,6 +182,7 @@ export async function processValidActivity(
       pace: paceSecondsPerKm,
       name: activity.name,
       start_date_local: activity.start_date_local,
+      status: 'valid',
       processed_at: FieldValue.serverTimestamp(),
     })
 
@@ -202,6 +205,48 @@ export async function processValidActivity(
 }
 
 /**
+ * Save a rejected activity to the database so the user can see why it was rejected.
+ * Does NOT increment any totals.
+ */
+export async function processRejectedActivity(
+  activity: StravaActivity,
+  stravaId: string,
+  teamId: string,
+  reason: string
+): Promise<void> {
+  const db = useFirebaseAdmin()
+  const { FieldValue } = await import('firebase-admin/firestore')
+
+  await db.runTransaction(async (transaction) => {
+    const activityRef = db.collection('activities').doc(String(activity.id))
+
+    // Check dedup inside transaction
+    const existingActivity = await transaction.get(activityRef)
+    if (existingActivity.exists) {
+      console.log(`[AntiCheat] Rejected activity ${activity.id} already saved, skipping.`)
+      return
+    }
+
+    // Write rejected activity record
+    transaction.set(activityRef, {
+      activity_id: activity.id,
+      strava_id: stravaId,
+      team_id: teamId,
+      distance_km: activity.distance / 1000,
+      moving_time: activity.moving_time,
+      pace: activity.moving_time / (activity.distance / 1000) || 0,
+      name: activity.name,
+      start_date_local: activity.start_date_local,
+      status: 'rejected',
+      reason: reason,
+      processed_at: FieldValue.serverTimestamp(),
+    })
+
+    console.log(`[AntiCheat] ❌ Rejected activity ${activity.id} saved for user ${stravaId}: ${reason}`)
+  })
+}
+
+/**
  * Remove a previously processed activity (for webhook delete/update events).
  * Atomically subtracts km from user and team totals.
  */
@@ -220,24 +265,29 @@ export async function removeProcessedActivity(activityId: number): Promise<void>
   const data = activityDoc.data()!
 
   await db.runTransaction(async (transaction) => {
-    // Subtract km from user
-    const userRef = db.collection('users').doc(data.strava_id)
-    transaction.update(userRef, {
-      total_km: FieldValue.increment(-data.distance_km),
-      activity_count: FieldValue.increment(-1),
-    })
+    // Only subtract km if the activity was valid and previously counted
+    if (data.status !== 'rejected') {
+      // Subtract km from user
+      const userRef = db.collection('users').doc(data.strava_id)
+      transaction.update(userRef, {
+        total_km: FieldValue.increment(-data.distance_km),
+        activity_count: FieldValue.increment(-1),
+      })
 
-    // Subtract km from team
-    const teamRef = db.collection('teams').doc(data.team_id)
-    transaction.update(teamRef, {
-      total_km: FieldValue.increment(-data.distance_km),
-    })
+      // Subtract km from team
+      const teamRef = db.collection('teams').doc(data.team_id)
+      transaction.update(teamRef, {
+        total_km: FieldValue.increment(-data.distance_km),
+      })
+      
+      console.log(
+        `[AntiCheat] 🗑️ Activity ${activityId} removed: -${data.distance_km}km from user ${data.strava_id} (${data.team_id})`
+      )
+    } else {
+      console.log(`[AntiCheat] 🗑️ Rejected activity ${activityId} removed, no km deducted.`)
+    }
 
     // Delete activity record
     transaction.delete(activityRef)
   })
-
-  console.log(
-    `[AntiCheat] 🗑️ Activity ${activityId} removed: -${data.distance_km}km from user ${data.strava_id} (${data.team_id})`
-  )
 }

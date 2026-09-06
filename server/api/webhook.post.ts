@@ -8,7 +8,7 @@
  */
 import { defineEventHandler, readBody } from 'h3'
 import { getValidAccessToken, fetchActivityDetail } from '../utils/strava'
-import { validateActivity, isActivityDuplicate, processValidActivity, removeProcessedActivity } from '../utils/antiCheat'
+import { validateActivity, isActivityDuplicate, processValidActivity, processRejectedActivity, removeProcessedActivity } from '../utils/antiCheat'
 import { useFirebaseAdmin } from '../utils/firebase'
 
 interface StravaWebhookEvent {
@@ -34,11 +34,13 @@ export default defineEventHandler(async (event) => {
     return { status: 'ok' }
   }
 
-  // Process asynchronously — don't block the 200 response
-  // Nitro will keep the function alive until this completes
-  processWebhookEvent(body).catch((err) => {
-    console.error(`[Webhook] Error processing event:`, err)
-  })
+  // Process asynchronously but tell Vercel to wait for it before freezing the lambda
+  // This prevents the "sometimes takes a long time to update" bug on serverless environments
+  event.waitUntil(
+    processWebhookEvent(body).catch((err) => {
+      console.error(`[Webhook] Error processing event:`, err)
+    })
+  )
 
   // Return 200 immediately (Strava requires <2s response)
   return { status: 'ok' }
@@ -68,8 +70,7 @@ async function processWebhookEvent(body: StravaWebhookEvent): Promise<void> {
     console.log(`[Webhook] Activity ${activityId} deleted by user ${stravaId}`)
     await removeProcessedActivity(activityId)
     // Clear caches
-    await useStorage('cache').removeItem('nitro:handlers:leaderboardData:global.json')
-    await useStorage('cache').removeItem(`nitro:handlers:userActivities:${stravaId}.json`)
+    // (Cache clearing removed as we rely on SWR / CDN TTL instead of explicit invalidation)
     return
   }
 
@@ -93,6 +94,13 @@ async function processWebhookEvent(body: StravaWebhookEvent): Promise<void> {
 
     if (!validation.valid) {
       console.log(`[Webhook] ❌ Activity ${activityId} rejected: ${validation.reason}`)
+      // Save the rejected activity to Firebase so the user can see it in their history modal
+      await processRejectedActivity(
+        activity,
+        stravaId,
+        userData.team_id,
+        validation.reason || 'Lý do không xác định'
+      )
       return
     }
 

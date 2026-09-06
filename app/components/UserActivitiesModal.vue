@@ -28,6 +28,24 @@
       </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="modal__tabs">
+      <button 
+        class="tab-btn" 
+        :class="{ 'tab-btn--active': activeTab === 'valid' }"
+        @click="activeTab = 'valid'"
+      >
+        Hợp lệ
+      </button>
+      <button 
+        class="tab-btn" 
+        :class="{ 'tab-btn--active': activeTab === 'rejected' }"
+        @click="activeTab = 'rejected'"
+      >
+        Bị từ chối
+      </button>
+    </div>
+
     <!-- Activities List -->
     <div class="modal__body">
       <div v-if="isLoading" class="modal__loading">
@@ -35,13 +53,14 @@
         <p>Đang tải dữ liệu bài chạy...</p>
       </div>
       
-      <div v-else-if="!user.activities || user.activities.length === 0" class="modal__empty">
-        <p>Chưa có bài chạy nào được ghi nhận.</p>
+      <div v-else-if="!filteredActivities || filteredActivities.length === 0" class="modal__empty">
+        <p v-if="activeTab === 'valid'">Chưa có bài chạy hợp lệ nào được ghi nhận.</p>
+        <p v-else>Không có bài chạy vi phạm nào.</p>
       </div>
       
       <div v-else class="activities-list">
         <div
-          v-for="activity in user.activities"
+          v-for="activity in filteredActivities"
           :key="activity.activity_id"
           class="activity-card"
         >
@@ -74,6 +93,14 @@
               Xem Strava
             </a>
           </div>
+
+          <!-- Rejection Reason -->
+          <div v-if="activity.status === 'rejected' && activity.reason" class="activity-card__alert">
+            <svg class="alert-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <span>{{ activity.reason }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -81,6 +108,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+
 interface Activity {
   activity_id: number
   name: string
@@ -88,6 +117,8 @@ interface Activity {
   moving_time: number
   pace: number
   start_date_local: string
+  status?: string
+  reason?: string
 }
 
 interface UserData {
@@ -103,6 +134,18 @@ const props = defineProps<{
   user: UserData
   isLoading?: boolean
 }>()
+
+const activeTab = ref<'valid' | 'rejected'>('valid')
+
+const filteredActivities = computed(() => {
+  if (!props.user.activities) return []
+  
+  if (activeTab.value === 'valid') {
+    return props.user.activities.filter(a => a.status !== 'rejected')
+  } else {
+    return props.user.activities.filter(a => a.status === 'rejected')
+  }
+})
 
 function formatDate(dateString: string) {
   // Strava's start_date_local notoriously includes 'Z' at the end even though it's local time.
@@ -137,8 +180,45 @@ function formatPace(secondsPerKm: number) {
   align-items: center;
   justify-content: space-between;
   padding-bottom: var(--space-md);
+}
+
+.modal__tabs {
+  display: flex;
+  gap: var(--space-md);
   margin-bottom: var(--space-md);
   border-bottom: 1px solid var(--color-border-glass);
+  padding-bottom: var(--space-xs);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+}
+
+.tab-btn--active {
+  color: var(--color-primary);
+}
+
+.tab-btn--active::after {
+  content: '';
+  position: absolute;
+  bottom: calc(var(--space-xs) * -1 - 1px);
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--color-primary);
+  border-radius: 2px 2px 0 0;
 }
 
 .modal__user-info {
@@ -286,6 +366,25 @@ function formatPace(secondsPerKm: number) {
 .btn--strava:hover {
   background-color: #e34402;
   transform: translateY(-1px);
+}
+
+.activity-card__alert {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.alert-icon {
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
