@@ -9,7 +9,6 @@
       <li><strong>Cự ly tối thiểu:</strong> 1 km / bài chạy</li>
       <li><strong>Loại hình:</strong> Chỉ tính chạy bộ (Run, VirtualRun, TrailRun).</li>
       <li><strong>Thiết bị:</strong> Bắt buộc chạy ngoài trời có GPS. Không chấp nhận máy chạy bộ (Treadmill).</li>
-      <li><strong>Tạm dừng (Pause):</strong> Thời gian nghỉ ngắt quãng không được quá dài (Tổng thời gian Elapsed Time không vượt quá 1.5 lần thời gian chạy Moving Time).</li>
       <li><strong>Gian lận:</strong> Không chấp nhận nhập tay (Manual) hoặc bài chạy bị Strava gắn cờ nghi ngờ (Flagged).</li>
     </ul>
   </div>

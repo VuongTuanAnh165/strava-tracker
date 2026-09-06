@@ -14,7 +14,6 @@ export const MAX_PACE = 900
 
 // Anti-Cheat constraints
 export const MAX_SPEED_MS = 1000 / MIN_PACE // Equivalent to 4:00/km (4.16 m/s or 15 km/h)
-export const MAX_PAUSE_RATIO = 1.5 // Elapsed time cannot be more than 1.5x moving time
 export const MIN_DISTANCE = 1000 // Minimum 1km per activity (in meters)
 
 // Valid activity types (deprecated 'type' field — kept for backward compatibility)

@@ -16,7 +16,7 @@
  *  9. Average pace too fast check
  * 10. Average pace too slow check
  */
-import { RACE_START, RACE_END, MIN_PACE, MAX_PACE, MAX_SPEED_MS, MAX_PAUSE_RATIO, MIN_DISTANCE, VALID_ACTIVITY_TYPES, VALID_SPORT_TYPES } from './constants'
+import { RACE_START, RACE_END, MIN_PACE, MAX_PACE, MAX_SPEED_MS, MIN_DISTANCE, VALID_ACTIVITY_TYPES, VALID_SPORT_TYPES } from './constants'
 import { useFirebaseAdmin } from './firebase'
 import type { StravaActivity } from './strava'
 
@@ -90,16 +90,7 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
 
   // Rule 7: (Đã gỡ bỏ) Max Speed Check — Thường xuyên phạt oan do nhiễu sóng GPS.
 
-  // Rule 8: Auto-Pause Exploit Check (Rest Ratio)
-  if (activity.moving_time > 0) {
-    const pauseRatio = activity.elapsed_time / activity.moving_time
-    if (pauseRatio > MAX_PAUSE_RATIO) {
-      return {
-        valid: false,
-        reason: `Thời gian nghỉ ngắt quãng quá dài (Tỷ lệ: ${pauseRatio.toFixed(1)}x). Vượt quá mức cho phép ${MAX_PAUSE_RATIO}x.`,
-      }
-    }
-  }
+  // Rule 8: (Đã gỡ bỏ) Auto-Pause Exploit Check — Cho phép người dùng tạm dừng tùy ý.
 
   // Rule 9 & 10: Average Pace Check (using moving_time)
   const distanceKm = activity.distance / 1000
