@@ -61,7 +61,7 @@ export function useLeaderboard() {
     }
   }
 
-  function startPolling(intervalMs = 300000) {
+  function startPolling(intervalMs = 15000) {
     stopPolling()
     fetchData()
     pollInterval = setInterval(fetchData, intervalMs)
