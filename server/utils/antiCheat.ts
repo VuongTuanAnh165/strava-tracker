@@ -129,7 +129,7 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
 export async function isActivityDuplicate(activityId: number): Promise<boolean> {
   const db = useFirebaseAdmin()
   const doc = await db.collection('activities').doc(String(activityId)).get()
-  return doc.exists
+  return doc.exists && doc.data()?.status !== 'rejected'
 }
 
 /**
@@ -158,7 +158,7 @@ export async function processValidActivity(
 
     // Check dedup inside transaction
     const existingActivity = await transaction.get(activityRef)
-    if (existingActivity.exists) {
+    if (existingActivity.exists && existingActivity.data()?.status !== 'rejected') {
       console.log(`[AntiCheat] Activity ${activity.id} already processed, skipping.`)
       return
     }
@@ -213,8 +213,8 @@ export async function processRejectedActivity(
 
     // Check dedup inside transaction
     const existingActivity = await transaction.get(activityRef)
-    if (existingActivity.exists) {
-      console.log(`[AntiCheat] Rejected activity ${activity.id} already saved, skipping.`)
+    if (existingActivity.exists && existingActivity.data()?.status === 'rejected' && existingActivity.data()?.reason === reason) {
+      console.log(`[AntiCheat] Rejected activity ${activity.id} already saved with same reason, skipping.`)
       return
     }
 

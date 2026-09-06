@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
       // Check if already processed
       const activityRef = db.collection('activities').doc(String(activity.id))
       const existingActivity = await activityRef.get()
-      if (existingActivity.exists) {
+      if (existingActivity.exists && existingActivity.data()?.status !== 'rejected') {
         duplicates++
         results.push({
           id: activity.id,
