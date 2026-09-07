@@ -40,7 +40,7 @@ export function validateActivity(activity: StravaActivity): ValidationResult {
   if (!typeValid && !sportTypeValid) {
     return {
       valid: false,
-      reason: `Sai loại hình: type="${activity.type}", sport_type="${activity.sport_type}". Chỉ chấp nhận chạy bộ (Run, VirtualRun, TrailRun).`,
+      reason: `Sai loại hình: type="${activity.type}", sport_type="${activity.sport_type}". Chỉ chấp nhận chạy bộ (Run, VirtualRun, TrailRun) và đi bộ (Walk).`,
     }
   }
 

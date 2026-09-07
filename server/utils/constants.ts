@@ -17,9 +17,9 @@ export const MAX_SPEED_MS = 1000 / MIN_PACE // Equivalent to 4:00/km (4.16 m/s o
 export const MIN_DISTANCE = 1000 // Minimum 1km per activity (in meters)
 
 // Valid activity types (deprecated 'type' field — kept for backward compatibility)
-export const VALID_ACTIVITY_TYPES = ['Run', 'VirtualRun']
+export const VALID_ACTIVITY_TYPES = ['Run', 'VirtualRun', 'Walk']
 // Valid sport types (new 'sport_type' field — recommended by Strava API)
-export const VALID_SPORT_TYPES = ['Run', 'VirtualRun', 'TrailRun']
+export const VALID_SPORT_TYPES = ['Run', 'VirtualRun', 'TrailRun', 'Walk']
 
 // Team configuration
 export const TEAMS = {
