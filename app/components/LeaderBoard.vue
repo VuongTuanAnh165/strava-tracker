@@ -35,6 +35,7 @@
         <span class="leaderboard__cell leaderboard__cell--user">Vận động viên</span>
         <span class="leaderboard__cell leaderboard__cell--team">Đội</span>
         <span class="leaderboard__cell leaderboard__cell--km">Tổng KM</span>
+        <span class="leaderboard__cell leaderboard__cell--percent">%</span>
         <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">Hành động</span>
       </div>
 
@@ -78,6 +79,10 @@
         <span class="leaderboard__cell leaderboard__cell--km">
           <strong>{{ user.total_km?.toFixed(1) || '0.0' }}</strong>
           <small>km</small>
+        </span>
+
+        <span class="leaderboard__cell leaderboard__cell--percent">
+          {{ calculatePercentage(user.total_km || 0).toFixed(1) }}%
         </span>
 
         <span v-if="isAdmin" class="leaderboard__cell leaderboard__cell--action">
@@ -159,6 +164,15 @@ const filteredUsers = computed(() => {
   return props.users.filter((u) => u.team_id === filter.value)
 })
 
+const totalKmInFilter = computed(() => {
+  return filteredUsers.value.reduce((sum, user) => sum + (user.total_km || 0), 0)
+})
+
+function calculatePercentage(userKm: number) {
+  if (totalKmInFilter.value === 0) return 0
+  return (userKm / totalKmInFilter.value) * 100
+}
+
 function getRankBadgeClass(rank: number) {
   if (rank === 1) return 'rank-badge rank-badge--1'
   if (rank === 2) return 'rank-badge rank-badge--2'
@@ -193,7 +207,7 @@ function getRankBadgeClass(rank: number) {
 
 .leaderboard__row {
   display: grid;
-  grid-template-columns: 50px 1fr 100px 100px;
+  grid-template-columns: 50px 1fr 100px 100px 70px;
   align-items: center;
   padding: var(--space-md) var(--space-sm);
   border-radius: var(--radius-sm);
@@ -205,7 +219,7 @@ function getRankBadgeClass(rank: number) {
 }
 
 .leaderboard--admin .leaderboard__row {
-  grid-template-columns: 50px 1fr 100px 100px 80px;
+  grid-template-columns: 50px 1fr 100px 100px 70px 80px;
 }
 
 .leaderboard__row:not(.leaderboard__row--header):hover {
@@ -264,6 +278,12 @@ function getRankBadgeClass(rank: number) {
 }
 
 .leaderboard__cell--runs {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.leaderboard__cell--percent {
   font-variant-numeric: tabular-nums;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -333,17 +353,17 @@ function getRankBadgeClass(rank: number) {
 
 @media (max-width: 768px) {
   .leaderboard__row {
-    grid-template-columns: 40px 1fr 70px 80px;
+    grid-template-columns: 40px 1fr 70px 80px 60px;
   }
 
   .leaderboard--admin .leaderboard__row {
-    grid-template-columns: 40px 1fr 70px 60px;
+    grid-template-columns: 40px 1fr 70px 80px 60px 80px;
   }
 }
 
 @media (max-width: 480px) {
   .leaderboard__row {
-    grid-template-columns: 35px 1fr 70px;
+    grid-template-columns: 35px 1fr 70px 50px;
   }
 
   .leaderboard__cell--team {
